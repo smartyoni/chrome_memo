@@ -24,36 +24,50 @@ document.addEventListener('DOMContentLoaded', () => {
     ];
 
     // --- 데이터 관리 ---
-    const loadData = () => {
-        let loadedCategories = JSON.parse(localStorage.getItem('categories')) || [];
-        const loadedMemos = JSON.parse(localStorage.getItem('memos')) || [];
-        
-        // 데이터 마이그레이션: 기존 카테고리에 색상 속성 추가
-        loadedCategories.forEach((cat, index) => {
-            if (!cat.color) {
-                cat.color = PRETTY_COLORS[index % PRETTY_COLORS.length];
-            }
-        });
+    const loadData = async () => {
+        try {
+            const result = await chrome.storage.local.get(['categories', 'memos']);
+            let loadedCategories = result.categories || [];
+            const loadedMemos = result.memos || [];
+            
+            // 데이터 마이그레이션: 기존 카테고리에 색상 속성 추가
+            loadedCategories.forEach((cat, index) => {
+                if (!cat.color) {
+                    cat.color = PRETTY_COLORS[index % PRETTY_COLORS.length];
+                }
+            });
 
-        // 기본 IN-BOX 카테고리 처리
-        let inBox = loadedCategories.find(c => c.id === 'in-box');
-        if (!inBox) {
-            // IN-BOX가 없으면 새로 생성
-            inBox = { id: 'in-box', name: 'IN-BOX', createdAt: Date.now(), color: '#FF69B4' };
-            categories = [inBox, ...loadedCategories];
-        } else {
-            // IN-BOX가 있으면 색상만 업데이트
-            inBox.color = '#FF69B4'; // 강제로 핑크색으로 설정
-            categories = loadedCategories;
+            // 기본 IN-BOX 카테고리 처리
+            let inBox = loadedCategories.find(c => c.id === 'in-box');
+            if (!inBox) {
+                // IN-BOX가 없으면 새로 생성
+                inBox = { id: 'in-box', name: 'IN-BOX', createdAt: Date.now(), color: '#FF69B4' };
+                categories = [inBox, ...loadedCategories];
+            } else {
+                // IN-BOX가 있으면 색상만 업데이트
+                inBox.color = '#FF69B4'; // 강제로 핑크색으로 설정
+                categories = loadedCategories;
+            }
+            
+            memos = loadedMemos;
+            await saveData(); // 마이그레이션 및 업데이트된 데이터 저장
+        } catch (error) {
+            console.error('데이터 로드 실패:', error);
+            // 기본값으로 초기화
+            categories = [{ id: 'in-box', name: 'IN-BOX', createdAt: Date.now(), color: '#FF69B4' }];
+            memos = [];
         }
-        
-        memos = loadedMemos;
-        saveData(); // 마이그레이션 및 업데이트된 데이터 저장
     };
 
-    const saveData = () => {
-        localStorage.setItem('categories', JSON.stringify(categories));
-        localStorage.setItem('memos', JSON.stringify(memos));
+    const saveData = async () => {
+        try {
+            await chrome.storage.local.set({
+                categories: categories,
+                memos: memos
+            });
+        } catch (error) {
+            console.error('데이터 저장 실패:', error);
+        }
     };
 
     // --- 렌더링 ---
@@ -118,7 +132,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // --- 이벤트 핸들러 ---
-    const handleQuickMemoSubmit = (e) => {
+    const handleQuickMemoSubmit = async (e) => {
         e.preventDefault();
         const fullText = memoInput.value.trim();
         if (!fullText) return;
@@ -134,12 +148,12 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         memos.push(newMemo);
-        saveData();
+        await saveData();
         render();
         memoForm.reset();
     };
 
-    const handleAddCategory = () => {
+    const handleAddCategory = async () => {
         const name = prompt('새 카테고리 이름을 입력하세요:');
         if (name && name.trim()) {
             const newCategory = {
@@ -149,7 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 color: PRETTY_COLORS[categories.length % PRETTY_COLORS.length]
             };
             categories.push(newCategory);
-            saveData();
+            await saveData();
             render();
         }
     };
@@ -180,7 +194,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (memo) openViewModal(memo);
     };
 
-    const handleEditCategory = (e) => {
+    const handleEditCategory = async (e) => {
         e.stopPropagation();
         const categoryId = e.target.closest('.category-item').dataset.id;
         const category = categories.find(c => c.id === categoryId);
@@ -189,12 +203,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const newName = prompt('카테고리 새 이름을 입력하세요:', category.name);
         if (newName && newName.trim()) {
             category.name = newName.trim();
-            saveData();
+            await saveData();
             render();
         }
     };
 
-    const handleDeleteCategory = (e) => {
+    const handleDeleteCategory = async (e) => {
         e.stopPropagation();
         const categoryId = e.target.closest('.category-item').dataset.id;
         if (categoryId === 'in-box') return;
@@ -209,7 +223,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (activeCategoryId === categoryId) activeCategoryId = null;
             if (expandedCategoryId === categoryId) expandedCategoryId = null;
 
-            saveData();
+            await saveData();
             render();
         }
     };
@@ -272,7 +286,7 @@ document.addEventListener('DOMContentLoaded', () => {
             setBookmarkBtn.id = 'set-bookmark-btn';
             setBookmarkBtn.className = 'modal-btn';
             setBookmarkBtn.textContent = '책갈피';
-            setBookmarkBtn.onclick = () => {
+            setBookmarkBtn.onclick = async () => {
                 if (memo.bookmarkPosition > 0) {
                     // 이미 책갈피가 설정되어 있으면 초기화
                     memo.bookmarkPosition = 0;
@@ -280,7 +294,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     // 책갈피 설정
                     memo.bookmarkPosition = modalBody.scrollTop;
                 }
-                saveData();
+                await saveData();
                 renderBookmarkUI(); // UI 즉시 업데이트
             };
 
@@ -311,10 +325,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const deleteBtn = document.createElement('button');
             deleteBtn.textContent = '삭제';
             deleteBtn.className = 'modal-btn';
-            deleteBtn.onclick = () => {
+            deleteBtn.onclick = async () => {
                 if (confirm('정말 이 메모를 삭제하시겠습니까?')) {
                     memos = memos.filter(m => m.id !== memo.id);
-                    saveData();
+                    await saveData();
                     render();
                     closeModal();
                 }
@@ -351,7 +365,7 @@ document.addEventListener('DOMContentLoaded', () => {
         editModal.style.display = 'flex';
     };
 
-    const handleEditFormSubmit = (e) => {
+    const handleEditFormSubmit = async (e) => {
         e.preventDefault();
         const id = document.getElementById('edit-id').value;
         const content = document.getElementById('edit-input').value.trim();
@@ -366,7 +380,7 @@ document.addEventListener('DOMContentLoaded', () => {
             memo.categoryId = categoryId;
         }
 
-        saveData();
+        await saveData();
         render();
         editModal.style.display = 'none';
     };
@@ -385,8 +399,8 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // --- 초기화 ---
-    const initialize = () => {
-        loadData();
+    const initialize = async () => {
+        await loadData();
         render();
 
         memoForm.addEventListener('submit', handleQuickMemoSubmit);
