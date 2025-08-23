@@ -217,10 +217,10 @@ document.addEventListener('DOMContentLoaded', () => {
         categoryAccordion.innerHTML = ''; // 아코디언 비우기
 
         const sortedCategories = [...categories].sort((a, b) => {
-            if (a.id === expandedCategoryId) return -1;
-            if (b.id === expandedCategoryId) return 1;
             if (a.id === 'in-box') return -1; // IN-BOX는 항상 위로
             if (b.id === 'in-box') return 1;
+            if (a.id === expandedCategoryId && a.id !== 'in-box') return -1; // 확장된 카테고리는 IN-BOX 다음으로
+            if (b.id === expandedCategoryId && b.id !== 'in-box') return 1;
             return (a.order || 0) - (b.order || 0); // order로 정렬
         });
 
