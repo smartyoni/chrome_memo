@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="sidebar-v2.css">
     <link rel="icon" href="icons/icon128.png">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="sortable.min.js"></script>
 </head>
 <body>
     <div class="main-container">
@@ -64,7 +65,56 @@
             </form>
         </div>
     </div>
-    
+
+    <!-- 커스텀 입력 모달 -->
+    <div id="input-modal" class="modal">
+        <div class="modal-content custom-modal">
+            <div class="modal-header">
+                <h3 id="input-modal-title">입력</h3>
+                <span class="close-btn">&times;</span>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="input-modal-input" placeholder="입력하세요..." class="custom-input">
+            </div>
+            <div class="modal-footer">
+                <button type="button" id="input-modal-cancel" class="btn-cancel">취소</button>
+                <button type="button" id="input-modal-confirm" class="btn-confirm">확인</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 커스텀 확인 모달 -->
+    <div id="alert-modal" class="modal">
+        <div class="modal-content custom-modal">
+            <div class="modal-header">
+                <h3 id="alert-modal-title">알림</h3>
+                <span class="close-btn">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p id="alert-modal-message">메시지</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" id="alert-modal-ok" class="btn-confirm">확인</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 커스텀 확인/취소 모달 -->
+    <div id="confirm-modal" class="modal">
+        <div class="modal-content custom-modal">
+            <div class="modal-header">
+                <h3 id="confirm-modal-title">확인</h3>
+                <span class="close-btn">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p id="confirm-modal-message">정말 실행하시겠습니까?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" id="confirm-modal-cancel" class="btn-cancel">취소</button>
+                <button type="button" id="confirm-modal-confirm" class="btn-confirm">확인</button>
+            </div>
+        </div>
+    </div>
     
     <script src="sidebar-v2.js"></script>
 </body>
