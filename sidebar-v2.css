@@ -1,0 +1,786 @@
+/* 기본 스타일 리셋 */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans KR', Arial, sans-serif;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    color: #2c3e50;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    overflow: hidden;
+    font-weight: 400;
+}
+
+.main-container {
+    max-width: 800px;
+    margin: 0 auto;
+    height: 100vh; /* 전체 화면 높이 */
+    display: flex;
+    flex-direction: column; /* 세로 배치 */
+    padding: 0; /* 패딩 제거 */
+}
+
+/* 상단 빠른 메모 섹션 - 고정 영역 */
+#quick-memo-section {
+    background: white;
+    padding: 20px;
+    border-radius: 0 0 20px 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    flex-shrink: 0;
+}
+
+#quick-memo-section h2 {
+    font-size: 24px;
+    margin-bottom: 15px;
+    font-weight: 700;
+    color: #2c3e50;
+    letter-spacing: -0.5px;
+}
+
+#current-datetime {
+    font-size: 14px;
+    opacity: 1;
+    font-weight: normal;
+    margin-left: 8px;
+    color: red;
+}
+
+#memo-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#memo-input {
+    min-height: 100px;
+    padding: 15px;
+    border: 2px solid #e2e8f0;
+    border-radius: 15px;
+    font-size: 16px;
+    resize: vertical;
+    outline: none;
+    font-family: inherit;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+#memo-input:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+}
+
+.button-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    align-items: center;
+}
+
+#memo-form button[type="submit"] {
+    padding: 12px 24px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 20px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+#memo-form button[type="submit"]:hover {
+    opacity: 0.9;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+#add-category-btn {
+    padding: 12px 24px;
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+    color: white;
+    border: none;
+    border-radius: 20px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(72, 187, 120, 0.3);
+}
+
+#add-category-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(72, 187, 120, 0.4);
+}
+
+/* 카테고리 섹션 - 스크롤 영역 */
+#category-section {
+    background: white;
+    padding: 20px;
+    border-radius: 20px 20px 0 0;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+    flex: 1;
+    overflow-y: auto; /* 세로 스크롤 활성화 */
+    margin-top: 10px; /* 상단 영역과 간격 */
+    /* 모바일 스크롤 최적화 */
+    -webkit-overflow-scrolling: touch;
+    /* 하단 안전 영역 확보 - 매우 큰 여백으로 확실하게 해결 */
+    padding-bottom: 200px;
+}
+
+
+/* 카테고리 아코디언 */
+#category-accordion {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.category-item {
+    border: 2px solid #2c3e50;
+    border-radius: 20px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    margin: 0;
+}
+
+.category-item.selected {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+}
+
+.category-header {
+    padding: 15px;
+    background: var(--category-bg-color); /* 배경색을 변수로 설정 */
+    color: white; /* 텍스트 색상을 흰색으로 */
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: background-color 0.2s ease;
+}
+
+.category-header:hover {
+    background: var(--category-bg-color, #edf2f7); /* 호버 시 약간 어둡게 */
+    filter: brightness(0.9); /* 호버 시 약간 어둡게 */
+}
+
+.category-header h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #2c3e50;
+    letter-spacing: -0.3px;
+    text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+}
+
+.category-controls-buttons {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+
+.move-category-up-btn, .move-category-down-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    cursor: pointer;
+    padding: 6px 8px;
+    font-size: 12px;
+    border-radius: 15px;
+    transition: all 0.2s ease;
+    line-height: 1;
+    opacity: 0.8;
+}
+
+.move-category-up-btn:hover, .move-category-down-btn:hover {
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.4);
+    transform: scale(1.05);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.edit-category-btn, .delete-category-btn {
+    background: rgba(255, 255, 255, 0.9);
+    border: none;
+    cursor: pointer;
+    padding: 6px 12px;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 15px;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.edit-category-btn {
+    color: #3182ce;
+}
+
+.edit-category-btn:hover {
+    background: #3182ce;
+    color: white;
+    transform: translateY(-1px);
+}
+
+.delete-category-btn {
+    color: #e53e3e;
+}
+
+.delete-category-btn:hover {
+    background: #e53e3e;
+    color: white;
+    transform: translateY(-1px);
+}
+
+.memo-list-inner {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease-in-out, padding 0.4s ease-in-out;
+    background: white;
+    padding: 0 15px;
+}
+
+.category-item.expanded > .memo-list-inner {
+    max-height: 1000px; /* 충분히 큰 값 */
+    padding: 15px;
+    border-top: 1px solid #e2e8f0;
+}
+
+.memo-item {
+    padding: 8px 12px;
+    margin: 6px 0;
+    border: 2px solid #e8f0fe;
+    border-radius: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    background: white; /* 기본 배경색 */
+    transition: all 0.2s ease; /* 부드러운 전환 효과 */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15); /* 음영도 약간 줄임 */
+    position: relative; /* 드래그 핸들을 위한 position */
+    min-height: 28px; /* 최소 높이 설정 */
+}
+
+.memo-item:hover {
+    background: #f7fafc;
+    border-color: #000000; /* 호버 시 더 진한 검정색 */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); /* 호버 시 더 강한 음영 */
+    transform: translateY(-2px); /* 더 높이 올라가는 효과 */
+}
+
+/* 드래그 앤 드롭 스타일 */
+
+.memo-item::before {
+    content: '';
+    position: absolute;
+    left: 3px; /* 위치를 약간 안쪽으로 */
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px; /* 너비를 줄임 */
+    height: 8px; /* 높이를 줄임 */
+    background: repeating-linear-gradient(
+        to bottom,
+        #ccc 0px,
+        #ccc 1px, /* 라인을 더 얇게 */
+        transparent 1px,
+        transparent 3px
+    );
+    opacity: 0.5;
+}
+
+.sortable-ghost {
+    opacity: 0.4;
+    background: #e2e8f0 !important;
+    border-color: #3182ce !important;
+    transform: rotate(2deg);
+}
+
+.sortable-chosen {
+    background: #ebf8ff !important;
+    border-color: #3182ce !important;
+    box-shadow: 0 8px 25px rgba(49, 130, 206, 0.25) !important;
+    transform: scale(1.02);
+}
+
+.sortable-drag {
+    background: white !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3) !important;
+    transform: rotate(5deg) scale(1.05);
+}
+
+.memo-title {
+    font-weight: 600;
+    flex: 1;
+    font-size: 15px;
+    line-height: 1.4;
+    color: #34495e;
+    letter-spacing: -0.2px;
+}
+
+.memo-actions {
+    display: flex;
+    gap: 4px; /* 버튼 간격도 줄임 */
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.memo-item:hover .memo-actions {
+    opacity: 1;
+}
+
+.pin-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 2px 3px; /* 패딩을 줄임 */
+    border-radius: 3px; /* 둥근 모서리도 줄임 */
+    font-size: 12px; /* 폰트 크기를 줄임 */
+    transition: all 0.2s ease;
+    line-height: 1; /* 라인 높이를 1로 설정 */
+}
+
+.pin-btn:hover {
+    background: rgba(0, 0, 0, 0.1);
+    transform: scale(1.1);
+}
+
+.pin-btn.pinned {
+    background: rgba(255, 193, 7, 0.2);
+    color: #d69e2e;
+}
+
+/* 고정된 메모 스타일 */
+.memo-item.pinned {
+    background: linear-gradient(135deg, #fff8dc 0%, #ffffff 100%) !important;
+    border-color: #f6ad55 !important;
+    box-shadow: 0 4px 15px rgba(246, 173, 85, 0.3) !important;
+    cursor: default !important;
+    border-radius: 18px !important;
+}
+
+.memo-item.pinned:hover {
+    transform: none !important; /* 고정된 메모는 hover 시 올라가지 않음 */
+}
+
+.memo-item.pinned .memo-title {
+    font-weight: 600;
+    color: #8b5a00;
+}
+
+.memo-item.pinned .memo-title::after {
+    content: ' 🔒';
+    font-size: 10px;
+    opacity: 0.7;
+    margin-left: 4px;
+}
+
+.memo-item.pinned::before {
+    background: repeating-linear-gradient(
+        to bottom,
+        #ffc107 0px,
+        #ffc107 1px, /* 고정된 메모의 드래그 핸들도 더 얇게 */
+        transparent 1px,
+        transparent 3px
+    );
+    opacity: 0.8;
+}
+
+/* 모달 스타일 */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    /* align-items와 justify-content 제거 */
+}
+
+.modal-content {
+    background-color: white;
+    position: absolute; /* JS로 위치를 제어하기 위해 absolute로 설정 */
+    top: 8%; /* 상단을 더 위로 올림 */
+    left: 50%;
+    transform: translateX(-50%); /* X축만 중앙 정렬 */
+    padding: 0;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    max-width: 600px;
+    width: 90%;
+    max-height: 78vh; /* 높이를 줄여서 하단 여유공간 확보 */
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-header {
+    padding: 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 18px;
+}
+
+/* 수정 모달 전용 헤더 스타일 */
+#edit-modal .modal-header {
+    padding: 10px 20px; /* 상하 패딩을 절반으로 줄임 */
+}
+
+#edit-modal .modal-header h3 {
+    font-size: 16px; /* 폰트 크기도 약간 줄임 */
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+.modal-body {
+    padding: 20px;
+    flex: 1;
+    overflow-y: auto;
+}
+
+#view-content {
+    line-height: 1.7;
+    margin-bottom: 20px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+/* 마크다운 렌더링된 콘텐츠 스타일 */
+#view-content h1, #view-content h2, #view-content h3, 
+#view-content h4, #view-content h5, #view-content h6 {
+    margin-top: 24px;
+    margin-bottom: 16px;
+    font-weight: 600;
+    line-height: 1.25;
+}
+
+#view-content h1 { font-size: 2em; border-bottom: 1px solid #eaecef; padding-bottom: 10px; }
+#view-content h2 { font-size: 1.5em; border-bottom: 1px solid #eaecef; padding-bottom: 8px; }
+#view-content h3 { font-size: 1.25em; }
+#view-content h4 { font-size: 1em; }
+#view-content h5 { font-size: 0.875em; }
+#view-content h6 { font-size: 0.85em; color: #6a737d; }
+
+#view-content p {
+    margin-bottom: 16px;
+}
+
+#view-content blockquote {
+    padding: 0 16px;
+    margin: 0 0 16px 0;
+    color: #6a737d;
+    border-left: 4px solid #dfe2e5;
+    background-color: #f6f8fa;
+}
+
+#view-content ul, #view-content ol {
+    padding-left: 32px;
+    margin-bottom: 16px;
+}
+
+#view-content li {
+    margin-bottom: 4px;
+}
+
+#view-content code {
+    background-color: rgba(175, 184, 193, 0.2);
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-size: 0.9em;
+    font-family: 'Courier New', monospace;
+}
+
+#view-content pre {
+    background-color: #f6f8fa;
+    border-radius: 6px;
+    padding: 16px;
+    overflow: auto;
+    margin-bottom: 16px;
+    border: 1px solid #e1e4e8;
+}
+
+#view-content pre code {
+    background-color: transparent;
+    padding: 0;
+}
+
+#view-content table {
+    border-collapse: collapse;
+    margin-bottom: 16px;
+    width: 100%;
+}
+
+#view-content table th,
+#view-content table td {
+    padding: 6px 13px;
+    border: 1px solid #dfe2e5;
+}
+
+#view-content table th {
+    background-color: #f6f8fa;
+    font-weight: 600;
+}
+
+#view-content a {
+    color: #0366d6;
+    text-decoration: none;
+}
+
+#view-content a:hover {
+    text-decoration: underline;
+}
+
+#view-content strong {
+    font-weight: 600;
+}
+
+#view-content em {
+    font-style: italic;
+}
+
+#view-content hr {
+    border: none;
+    border-top: 1px solid #e1e4e8;
+    margin: 24px 0;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: nowrap;
+}
+
+/* 수정 모달 폼 스타일 */
+.form-group {
+    margin-bottom: 10px; /* 마진 줄임 */
+    display: flex;
+    align-items: center; /* 라벨과 드롭다운을 한 줄로 정렬 */
+    gap: 10px; /* 라벨과 드롭다운 사이 간격 */
+}
+
+.form-group label {
+    font-weight: 600;
+    white-space: nowrap; /* 라벨 텍스트 줄바꿈 방지 */
+    min-width: fit-content; /* 라벨 최소 너비 */
+}
+
+#edit-category {
+    flex: 1; /* 드롭다운이 남은 공간을 모두 차지 */
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+#edit-input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+    min-height: 250px; /* 높이 추가 증가 (200px → 250px) */
+    resize: vertical;
+}
+
+#edit-form button[type="submit"] {
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+/* 모바일 반응형 */
+@media screen and (max-width: 768px) {
+    .main-container {
+        padding: 0;
+    }
+    #quick-memo-section {
+        border-radius: 0; /* 모바일에서는 둥글지 않게 */
+        padding: 15px;
+    }
+    #category-section {
+        border-radius: 0; /* 모바일에서는 둥글지 않게 */
+        padding: 15px;
+        margin-top: 0; /* 모바일에서는 간격 없애기 */
+    }
+    #quick-memo-section h2 {
+        font-size: 20px;
+    }
+    .category-header h3 {
+        font-size: 16px;
+    }
+}
+
+/* 책갈피 기능 스타일 */
+.bookmark-marker {
+    position: absolute;
+    left: 0px;
+    font-size: 20px;
+    opacity: 0.7;
+    pointer-events: none; /* 마커가 클릭 이벤트를 방해하지 않도록 */
+}
+
+#set-bookmark-btn {
+    background-color: #ffc107;
+    color: #333;
+    border-color: #e0a800;
+}
+
+#set-bookmark-btn:hover {
+    background-color: #e0a800;
+}
+
+#goto-bookmark-btn {
+    background-color: #17a2b8;
+    color: white;
+    border-color: #138496;
+}
+
+#goto-bookmark-btn:hover {
+    background-color: #138496;
+}
+
+/* 모달 푸터 스타일 */
+.modal-footer {
+    padding: 18px 20px;
+    border-top: 1px solid #e2e8f0;
+    background-color: #f7fafc;
+    display: flex;
+    flex-wrap: nowrap; /* 한 줄에 배치 */
+    gap: 6px;
+    justify-content: flex-end;
+    overflow-x: auto; /* 필요시 가로 스크롤 */
+    min-height: 60px; /* 최소 높이 설정 */
+    align-items: center; /* 버튼들을 세로 중앙 정렬 */
+}
+
+.modal-btn {
+    padding: 10px 14px; /* 패딩 증가 */
+    border: 1px solid #ddd; /* 테두리 추가 */
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px; /* 폰트 크기 복원 */
+    font-weight: 500; /* 폰트 굵기 추가 */
+    white-space: nowrap; /* 텍스트 줄바꿈 방지 */
+    flex-shrink: 0; /* 버튼 크기 고정 */
+    background: white; /* 기본 배경색 */
+    color: #333; /* 기본 텍스트 색상 */
+    transition: all 0.2s ease; /* 호버 효과 */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* 그림자 효과 */
+}
+
+.modal-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+#view-content {
+    margin-bottom: 0; /* 푸터가 생겼으므로 하단 여백 제거 */
+}
+
+#edit-form {
+    display: flex;
+    flex-direction: column;
+    height: 100%; /* form이 모달 콘텐츠 전체를 채우도록 */
+}
+
+#edit-form .modal-body {
+    flex: 1 1 auto; /* 수정 모달의 body가 늘어나도록 */
+}
+
+#edit-form .modal-footer {
+    flex-shrink: 0; /* 푸터는 줄어들지 않도록 */
+    padding: 8px 20px; /* 상하 패딩 대폭 축소 (15px → 8px) */
+    min-height: auto; /* 최소 높이 제거 */
+}
+
+/* 커스텀 모달 스타일 */
+.custom-modal {
+    width: 400px;
+    max-width: 90%;
+    border-radius: 20px;
+    border: 2px solid #2c3e50;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.custom-input {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #e2e8f0;
+    border-radius: 15px;
+    font-size: 16px;
+    outline: none;
+    font-family: inherit;
+    transition: border-color 0.2s ease;
+}
+
+.custom-input:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+}
+
+.btn-confirm {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 15px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.btn-confirm:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.btn-cancel {
+    background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 15px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(229, 62, 62, 0.3);
+}
+
+.btn-cancel:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(229, 62, 62, 0.4);
+}
+
+.custom-modal .modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 15px;
+    border-top: 1px solid #e2e8f0;
+}

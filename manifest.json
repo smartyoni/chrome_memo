@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "스마트메모",
+  "description": "어디서든 메모를 관리하는 나만의 메모장",
+  "version": "1.0",
+  "permissions": [
+    "sidePanel",
+    "storage"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "side_panel": {
+    "default_path": "index.html"
+  },
+  "action": {
+    "default_title": "스마트메모 열기"
+  }
+}
