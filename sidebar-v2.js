@@ -231,13 +231,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (a.pinned && !b.pinned) return -1;
                     if (!a.pinned && b.pinned) return 1;
                     
-                    // 둘 다 고정된 메모인 경우, pinnedAt 시간 순으로 정렬 (먼저 고정된 것이 위로)
+                    // 둘 다 고정된 메모인 경우, pinnedAt 시간 순으로 정렬 (최근에 고정된 것이 위로)
                     if (a.pinned && b.pinned) {
-                        return (a.pinnedAt || 0) - (b.pinnedAt || 0);
+                        return (b.pinnedAt || 0) - (a.pinnedAt || 0);
                     }
                     
-                    // 일반 메모들은 order로 정렬
-                    return (a.order || 0) - (b.order || 0);
+                    // 일반 메모들은 order로 역순 정렬 (최신이 위로)
+                    return (b.order || 0) - (a.order || 0);
                 });
             const isExpanded = category.id === expandedCategoryId;
             const isSelected = category.id === activeCategoryId;
