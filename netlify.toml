@@ -1,12 +1,12 @@
 [build]
   # 빌드 명령어
-  command = "npm run build"
+  command = "npm ci && npm run build"
   # 빌드 결과물 디렉토리
   publish = "dist"
 
 [build.environment]
-  # Node.js 버전 지정
-  NODE_VERSION = "18"
+  # Node.js 버전 지정 (더 안정적인 버전)
+  NODE_VERSION = "20"
 
 # SPA(Single Page Application)를 위한 리디렉션 설정
 [[redirects]]
