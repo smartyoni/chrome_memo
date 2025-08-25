@@ -1,120 +1,13 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>스마트메모</title>
-    <link rel="stylesheet" href="sidebar-v2.css">
-    <link rel="icon" href="icons/icon128.png">
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="sortable.min.js"></script>
-</head>
-<body>
-    <div class="main-container">
-        <header id="quick-memo-section">
-            <h2>빠른 메모 <span id="current-datetime"></span></h2>
-            <form id="memo-form">
-                <textarea id="memo-input" placeholder="메모를 입력하세요. 첫 줄은 제목이 됩니다."></textarea>
-                <div class="button-row">
-                    <button type="button" id="add-category-btn">새 카테고리 추가</button>
-                    <button type="submit">저장</button>
-                </div>
-            </form>
-        </header>
-
-        <main id="category-section">
-            <div id="category-accordion">
-                <!-- 카테고리와 메모가 여기에 동적으로 생성됩니다. -->
-            </div>
-        </main>
-    </div>
-
-    <div id="view-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="view-title"></h3>
-                <span class="close-btn">&times;</span>
-            </div>
-            <div class="modal-body">
-                <p id="view-content"></p>
-            </div>
-            <div class="modal-footer" id="view-modal-footer">
-                <!-- 보기 모달 버튼들 -->
-            </div>
-        </div>
-    </div>
-
-    <div id="edit-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>메모 편집</h3>
-                <span class="close-btn">&times;</span>
-            </div>
-            <form id="edit-form">
-                <div class="modal-body">
-                    <input type="hidden" id="edit-id">
-                    <textarea id="edit-input" placeholder="메모를 입력하세요."></textarea>
-                    <select id="edit-category">
-                        <!-- 카테고리 옵션들이 동적으로 생성됩니다. -->
-                    </select>
-                </div>
-                <div class="modal-footer">
-                    <button type="submit">저장</button>
-                    <button type="button" class="close-btn">취소</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Input Modal -->
-    <div id="input-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="input-modal-title">입력</h3>
-                <span class="close-btn">&times;</span>
-            </div>
-            <div class="modal-body">
-                <input type="text" id="input-modal-input" placeholder="">
-            </div>
-            <div class="modal-footer">
-                <button id="input-modal-confirm">확인</button>
-                <button id="input-modal-cancel">취소</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Alert Modal -->
-    <div id="alert-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="alert-modal-title">알림</h3>
-                <span class="close-btn">&times;</span>
-            </div>
-            <div class="modal-body">
-                <p id="alert-modal-message"></p>
-            </div>
-            <div class="modal-footer">
-                <button id="alert-modal-ok">확인</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Confirm Modal -->
-    <div id="confirm-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="confirm-modal-title">확인</h3>
-                <span class="close-btn">&times;</span>
-            </div>
-            <div class="modal-body">
-                <p id="confirm-modal-message"></p>
-            </div>
-            <div class="modal-footer">
-                <button id="confirm-modal-confirm">예</button>
-                <button id="confirm-modal-cancel">아니오</button>
-            </div>
-        </div>
-    </div>
-    <script src="sidebar-v2.js"></script>
-</body>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Personal Wiki - 개인 위키 시스템</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>

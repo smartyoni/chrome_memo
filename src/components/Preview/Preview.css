@@ -1,0 +1,71 @@
+.preview {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: white;
+}
+
+.preview-header {
+  padding: 12px 20px;
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.preview-header h3 {
+  margin: 0;
+  color: #495057;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.preview-content {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  line-height: 1.6;
+  font-size: 14px;
+}
+
+.preview-content h2 {
+  color: #212529;
+  margin: 20px 0 10px 0;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #dee2e6;
+  font-size: 20px;
+}
+
+.preview-content strong {
+  font-weight: 600;
+  color: #212529;
+}
+
+.preview-content em {
+  font-style: italic;
+  color: #495057;
+}
+
+.preview-content del {
+  text-decoration: line-through;
+  color: #6c757d;
+}
+
+.preview-content .wiki-link {
+  color: #007bff;
+  text-decoration: none;
+  border-bottom: 1px dotted #007bff;
+}
+
+.preview-content .wiki-link:hover {
+  background-color: #e7f3ff;
+  text-decoration: none;
+}
+
+.preview-content ul {
+  margin: 15px 0;
+  padding-left: 30px;
+}
+
+.preview-content li {
+  margin-bottom: 5px;
+  color: #495057;
+}
