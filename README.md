@@ -1,69 +1,52 @@
-# React + TypeScript + Vite
+# 스마트메모 (Smart Memo)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+"어디서든 메모를 관리하는 나만의 메모장"
 
-Currently, two official plugins are available:
+이 프로젝트는 간단한 메모를 작성하고 관리할 수 있는 웹 애플리케이션입니다. 브라우저의 로컬 스토리지를 사용하여 데이터를 저장하며, PWA(Progressive Web App)로도 작동하여 모바일 기기나 데스크톱에 설치하여 사용할 수 있습니다.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 주요 기능
 
-## Expanding the ESLint configuration
+- **메모 작성 및 저장**: 간단한 텍스트 메모를 작성하고 저장할 수 있습니다. 메모의 첫 줄은 자동으로 제목이 됩니다.
+- **카테고리(탭) 관리**: 메모를 카테고리별로 정리할 수 있습니다.
+  - 새 탭 추가
+  - 탭 이름 수정
+  - 탭 삭제 (해당 탭의 모든 메모가 함께 삭제됩니다)
+  - 드래그 앤 드롭으로 탭 순서 변경
+- **메모 관리**:
+  - 메모 목록 보기
+  - 메모 내용 보기 및 수정
+  - 메모 삭제
+  - 메모 고정(Pin) 기능으로 중요 메모를 상단에 위치
+  - 메모 내용 복사
+- **반응형 UI**: 데스크톱과 모바일 환경 모두에서 사용하기 편한 UI를 제공합니다.
+- **PWA 지원**: `manifest.json`과 서비스 워커(`sw.js`, 현재는 등록 코드만 존재)를 통해 웹앱을 기기에 설치할 수 있습니다.
+- **공유 기능**: 다른 앱에서 텍스트를 공유받아 새 메모로 추가할 수 있습니다.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## 파일 구성
 
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+-   `index.html`: 애플리케이션의 메인 HTML 파일입니다. UI 구조를 정의합니다.
+-   `sidebar-v2.css`: 애플리케이션의 전체적인 스타일을 담당하는 CSS 파일입니다.
+-   `sidebar-v2.js`: 애플리케이션의 핵심 로직을 담고 있는 JavaScript 파일입니다. 메모와 탭의 CRUD(생성, 읽기, 수정, 삭제), UI 이벤트 처리 등을 담당합니다.
+-   `sortable.min.js`: 탭 순서를 드래그 앤 드롭으로 변경할 수 있게 해주는 외부 라이브러리입니다.
+-   `manifest.json`: PWA(Progressive Web App) 설정을 위한 파일입니다. 앱의 이름, 아이콘, 시작 URL, 테마 색상 등을 정의합니다.
+-   `background.js`: (현재는 사용되지 않음) Chrome 확장 프로그램의 백그라운드 스크립트 파일로 보입니다. 아이콘 클릭 시 `sidebar.html`을 여는 기능이 있었으나, 현재 프로젝트는 `index.html`을 사용합니다.
+-   `icons/`: 앱에서 사용되는 다양한 크기의 아이콘 이미지 파일들이 들어있습니다.
 
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
+## 사용 방법
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+1.  웹 브라우저에서 `index.html` 파일을 엽니다.
+2.  **메모 추가**:
+    -   왼쪽 '새 메모' 섹션의 입력란에 내용을 입력합니다.
+    -   '저장' 버튼을 클릭합니다.
+3.  **메모 보기/수정/삭제**:
+    -   오른쪽 '메모 목록'에서 원하는 메모를 클릭하면 상세 내용을 볼 수 있습니다.
+    -   팝업 창에서 '수정' 또는 '삭제' 버튼을 클릭하여 관리합니다.
+4.  **탭 관리**:
+    -   탭 목록 우측의 '+' 버튼을 눌러 새 탭을 추가할 수 있습니다.
+    -   탭을 클릭하여 해당 카테고리의 메모만 볼 수 있습니다.
+    -   탭 이름을 클릭하면 이름 수정 및 탭 삭제가 가능합니다.
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## PWA로 설치하기
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+-   **PC (Chrome, Edge 등)**: 주소창 우측의 '설치' 아이콘을 클릭하여 데스크톱 앱처럼 사용할 수 있습니다.
+-   **모바일 (Android/iOS)**: 브라우저 메뉴에서 '홈 화면에 추가' 또는 '앱 설치'를 선택하여 앱처럼 사용할 수 있습니다.
