@@ -2,9 +2,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // DOM 요소
     const memoForm = document.getElementById('memo-form');
     const memoInput = document.getElementById('memo-input');
-    const addCategoryBtn = document.getElementById('add-category-btn');
-    const categoryAccordion = document.getElementById('category-accordion');
+    const memoList = document.getElementById('memo-list');
     const datetimeElement = document.getElementById('current-datetime');
+    const clearBtn = document.getElementById('clear-btn');
 
     // 모달 관련 DOM 요소
     const viewModal = document.getElementById('view-modal');
@@ -13,58 +13,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const editForm = document.getElementById('edit-form');
 
     // 앱 상태 변수
-    let categories = [];
     let memos = [];
-    let activeCategoryId = null;
-    let expandedCategoryId = null;
 
     // 커스텀 모달 함수들
-    const showInputModal = (title, placeholder = '', defaultValue = '') => {
-        return new Promise((resolve) => {
-            const modal = document.getElementById('input-modal');
-            const titleEl = document.getElementById('input-modal-title');
-            const input = document.getElementById('input-modal-input');
-            const confirmBtn = document.getElementById('input-modal-confirm');
-            const cancelBtn = document.getElementById('input-modal-cancel');
-            const closeBtns = modal.querySelectorAll('.close-btn');
-
-            titleEl.textContent = title;
-            input.placeholder = placeholder;
-            input.value = defaultValue;
-            modal.style.display = 'flex';
-            input.focus();
-
-            const cleanup = () => {
-                modal.style.display = 'none';
-                confirmBtn.removeEventListener('click', handleConfirm);
-                cancelBtn.removeEventListener('click', handleCancel);
-                closeBtns.forEach(btn => btn.removeEventListener('click', handleCancel));
-                input.removeEventListener('keypress', handleKeypress);
-            };
-
-            const handleConfirm = () => {
-                const value = input.value.trim();
-                cleanup();
-                resolve(value || null);
-            };
-
-            const handleCancel = () => {
-                cleanup();
-                resolve(null);
-            };
-
-            const handleKeypress = (e) => {
-                if (e.key === 'Enter') handleConfirm();
-                if (e.key === 'Escape') handleCancel();
-            };
-
-            confirmBtn.addEventListener('click', handleConfirm);
-            cancelBtn.addEventListener('click', handleCancel);
-            closeBtns.forEach(btn => btn.addEventListener('click', handleCancel));
-            input.addEventListener('keypress', handleKeypress);
-        });
-    };
-
     const showAlertModal = (title, message) => {
         return new Promise((resolve) => {
             const modal = document.getElementById('alert-modal');
@@ -129,84 +80,21 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    // 더 예쁜 파스텔 색상 팔레트
-    const PRETTY_COLORS = [
-        '#FFE1E6', // 파스텔 핑크
-        '#E1F0FF', // 파스텔 블루
-        '#F0E1FF', // 파스텔 퍼플
-        '#FFE8D1', // 파스텔 오렌지
-        '#E1FFE1', // 파스텔 그린
-        '#FFE1F0', // 파스텔 로즈
-        '#D1F5FF', // 파스텔 사이안
-        '#F5E1FF', // 파스텔 바이올렛
-        '#FFE1D1', // 파스텔 레드
-        '#F0FFD1', // 파스텔 라임
-        '#FFF0D1', // 파스텔 앰버
-        '#D1FFF0', // 파스텔 틸
-        '#FFD1F5', // 파스텔 퓨샤
-        '#FFFFD1', // 파스텔 옐로우
-        '#D1FFEE'  // 파스텔 에메랄드
-    ];
-
     // --- 데이터 관리 ---
     const loadData = async () => {
         try {
-            const result = await chrome.storage.local.get(['categories', 'memos']);
-            let loadedCategories = result.categories || [];
-            const loadedMemos = result.memos || [];
-            
-            // 데이터 마이그레이션: 기존 카테고리에 색상 및 order 속성 추가
-            loadedCategories.forEach((cat, index) => {
-                if (!cat.color) {
-                    cat.color = PRETTY_COLORS[index % PRETTY_COLORS.length];
-                }
-                if (cat.order === undefined) {
-                    cat.order = cat.createdAt || index; // 기존 카테고리는 생성시간을 order로 사용
-                }
-            });
-
-            // 기본 IN-BOX 카테고리 처리
-            let inBox = loadedCategories.find(c => c.id === 'in-box');
-            if (!inBox) {
-                // IN-BOX가 없으면 새로 생성
-                inBox = { id: 'in-box', name: 'IN-BOX', createdAt: Date.now(), color: '#FFE1E6', order: 0 };
-                categories = [inBox, ...loadedCategories];
-            } else {
-                // IN-BOX가 있으면 색상과 order 업데이트
-                inBox.color = '#FFE1E6'; // 파스텔 핑크
-                if (inBox.order === undefined) {
-                    inBox.order = 0; // IN-BOX는 항상 첫 번째
-                }
-                categories = loadedCategories;
-            }
-            
-            // 메모 데이터 마이그레이션: order 및 pinnedAt 속성 추가
-            loadedMemos.forEach(memo => {
-                if (memo.order === undefined) {
-                    memo.order = memo.createdAt; // 기존 메모는 생성 시간을 order로 사용
-                }
-                // 고정된 메모인데 pinnedAt이 없는 경우 createdAt을 사용
-                if (memo.pinned && !memo.pinnedAt) {
-                    memo.pinnedAt = memo.createdAt;
-                }
-            });
-            
-            memos = loadedMemos;
-            await saveData(); // 마이그레이션 및 업데이트된 데이터 저장
+            // 기존 데이터 모두 삭제
+            await chrome.storage.local.clear();
+            memos = [];
         } catch (error) {
-            console.error('데이터 로드 실패:', error);
-            // 기본값으로 초기화
-            categories = [{ id: 'in-box', name: 'IN-BOX', createdAt: Date.now(), color: '#FFE1E6', order: 0 }];
+            console.error('데이터 초기화 실패:', error);
             memos = [];
         }
     };
 
     const saveData = async () => {
         try {
-            await chrome.storage.local.set({
-                categories: categories,
-                memos: memos
-            });
+            await chrome.storage.local.set({ memos: memos });
         } catch (error) {
             console.error('데이터 저장 실패:', error);
         }
@@ -214,157 +102,57 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- 렌더링 ---
     const render = () => {
-        categoryAccordion.innerHTML = ''; // 아코디언 비우기
+        memoList.innerHTML = '';
 
-        const sortedCategories = [...categories].sort((a, b) => {
-            if (a.id === 'in-box') return -1; // IN-BOX는 항상 위로
-            if (b.id === 'in-box') return 1;
-            if (a.id === expandedCategoryId && a.id !== 'in-box') return -1; // 확장된 카테고리는 IN-BOX 다음으로
-            if (b.id === expandedCategoryId && b.id !== 'in-box') return 1;
-            return (a.order || 0) - (b.order || 0); // order로 정렬
-        });
+        // 최신 메모가 위로 오도록 정렬
+        const sortedMemos = [...memos].sort((a, b) => b.createdAt - a.createdAt);
 
-        sortedCategories.forEach(category => {
-            const categoryMemos = memos.filter(memo => memo.categoryId === category.id)
-                .sort((a, b) => {
-                    // 고정된 메모를 먼저 정렬
-                    if (a.pinned && !b.pinned) return -1;
-                    if (!a.pinned && b.pinned) return 1;
-                    
-                    // 둘 다 고정된 메모인 경우, pinnedAt 시간 순으로 정렬 (최근에 고정된 것이 위로)
-                    if (a.pinned && b.pinned) {
-                        return (b.pinnedAt || 0) - (a.pinnedAt || 0);
-                    }
-                    
-                    // 일반 메모들은 order로 역순 정렬 (최신이 위로)
-                    return (b.order || 0) - (a.order || 0);
-                });
-            const isExpanded = category.id === expandedCategoryId;
-            const isSelected = category.id === activeCategoryId;
+        sortedMemos.forEach(memo => {
+            const memoItem = document.createElement('div');
+            memoItem.className = 'memo-item';
+            memoItem.dataset.memoId = memo.id;
 
-            const categoryItem = document.createElement('div');
-            categoryItem.className = `category-item ${isExpanded ? 'expanded' : ''} ${isSelected ? 'selected' : ''}`;
-            categoryItem.dataset.id = category.id;
-            categoryItem.style.setProperty('--category-bg-color', category.color);
-
-            categoryItem.innerHTML = `
-                <div class="category-header">
-                    <h3>${category.name} (${categoryMemos.length})</h3>
-                    <div class="category-controls-buttons">
-                        ${category.id !== 'in-box' ? `
-                            <button class="move-category-up-btn" data-category-id="${category.id}" title="위로 이동">🔺</button>
-                            <button class="move-category-down-btn" data-category-id="${category.id}" title="아래로 이동">🔻</button>
-                        ` : ''}
-                        <button class="edit-category-btn">수정</button>
-                        ${category.id !== 'in-box' ? '<button class="delete-category-btn">삭제</button>' : ''}
-                    </div>
-                </div>
-                <div class="memo-list-inner sortable-list" data-category-id="${category.id}">
-                    ${categoryMemos.map(memo => `
-                        <div class="memo-item ${memo.pinned ? 'pinned' : ''}" data-memo-id="${memo.id}">
-                            <span class="memo-title">${memo.title}</span>
-                            <div class="memo-actions">
-                                <button class="pin-btn ${memo.pinned ? 'pinned' : ''}" data-memo-id="${memo.id}" title="${memo.pinned ? '고정 해제' : '상단 고정'}">
-                                    ${memo.pinned ? '📌' : '📍'}
-                                </button>
-                            </div>
-                        </div>
-                    `).join('')}
+            memoItem.innerHTML = `
+                <span class="memo-title">${memo.title}</span>
+                <div class="memo-actions">
+                    <button class="edit-btn" data-memo-id="${memo.id}">수정</button>
+                    <button class="delete-btn" data-memo-id="${memo.id}">삭제</button>
                 </div>
             `;
 
-            categoryAccordion.appendChild(categoryItem);
+            memoList.appendChild(memoItem);
         });
 
         addEventListenersToItems();
-        initializeSortable();
-    };
-
-    // --- 드래그 앤 드롭 ---
-    const initializeSortable = () => {
-        document.querySelectorAll('.sortable-list').forEach(list => {
-            new Sortable(list, {
-                animation: 150,
-                ghostClass: 'sortable-ghost',
-                chosenClass: 'sortable-chosen',
-                dragClass: 'sortable-drag',
-                // 고정된 메모는 드래그할 수 없도록 설정
-                filter: '.pinned',
-                preventOnFilter: true,
-                onStart: function(evt) {
-                    const memoId = evt.item.dataset.memoId;
-                    const memo = memos.find(m => m.id === memoId);
-                    // 고정된 메모인 경우 드래그 중단
-                    if (memo && memo.pinned) {
-                        return false;
-                    }
-                },
-                onEnd: async function(evt) {
-                    const categoryId = evt.from.dataset.categoryId;
-                    const memoElements = Array.from(evt.from.children);
-                    
-                    // 고정되지 않은 메모들만 order 재계산
-                    const categoryMemos = memos.filter(memo => memo.categoryId === categoryId && !memo.pinned);
-                    let orderIndex = 1;
-                    
-                    memoElements.forEach((element) => {
-                        const memoId = element.dataset.memoId;
-                        const memo = memos.find(m => m.id === memoId);
-                        if (memo && !memo.pinned) {
-                            memo.order = orderIndex++;
-                        }
-                    });
-                    
-                    await saveData();
-                }
-            });
-        });
     };
 
     // --- 이벤트 리스너 ---
     const addEventListenersToItems = () => {
-        document.querySelectorAll('.category-header').forEach(header => {
-            header.addEventListener('click', handleCategoryHeaderClick);
-        });
         document.querySelectorAll('.memo-item').forEach(item => {
             item.addEventListener('click', handleMemoItemClick);
         });
-        document.querySelectorAll('.edit-category-btn').forEach(btn => {
-            btn.addEventListener('click', handleEditCategory);
+        document.querySelectorAll('.edit-btn').forEach(btn => {
+            btn.addEventListener('click', handleEditMemo);
         });
-        document.querySelectorAll('.delete-category-btn').forEach(btn => {
-            btn.addEventListener('click', handleDeleteCategory);
-        });
-        document.querySelectorAll('.pin-btn').forEach(btn => {
-            btn.addEventListener('click', handlePinMemo);
-        });
-        document.querySelectorAll('.move-category-up-btn').forEach(btn => {
-            btn.addEventListener('click', handleMoveCategoryUp);
-        });
-        document.querySelectorAll('.move-category-down-btn').forEach(btn => {
-            btn.addEventListener('click', handleMoveCategoryDown);
+        document.querySelectorAll('.delete-btn').forEach(btn => {
+            btn.addEventListener('click', handleDeleteMemo);
         });
     };
 
     // --- 이벤트 핸들러 ---
-    const handleQuickMemoSubmit = async (e) => {
+    const handleMemoSubmit = async (e) => {
         e.preventDefault();
         const fullText = memoInput.value.trim();
         if (!fullText) return;
 
         const lines = fullText.split('\n');
         const title = lines[0];
-        // 해당 카테고리의 메모 개수를 구해서 order 설정
-        const categoryMemos = memos.filter(memo => memo.categoryId === (activeCategoryId || 'in-box'));
-        const maxOrder = categoryMemos.length > 0 ? Math.max(...categoryMemos.map(m => m.order || 0)) : 0;
         
         const newMemo = {
             id: Date.now().toString(),
             title: title,
             content: fullText,
-            categoryId: activeCategoryId || 'in-box',
-            createdAt: Date.now(),
-            order: maxOrder + 1
+            createdAt: Date.now()
         };
 
         memos.push(newMemo);
@@ -373,152 +161,44 @@ document.addEventListener('DOMContentLoaded', () => {
         memoForm.reset();
     };
 
-    const handleAddCategory = async () => {
-        const name = await showInputModal('새 카테고리', '카테고리 이름을 입력하세요');
-        if (name) {
-            // 현재 카테고리들 중 가장 큰 order 값을 찾아서 +1
-            const maxOrder = categories.length > 0 ? Math.max(...categories.map(c => c.order || 0)) : 0;
-            const newCategory = {
-                id: Date.now().toString(),
-                name: name,
-                createdAt: Date.now(),
-                color: PRETTY_COLORS[categories.length % PRETTY_COLORS.length],
-                order: maxOrder + 1
-            };
-            categories.push(newCategory);
-            await saveData();
-            render();
+    // 초기화 버튼 핸들러
+    const handleClearBtn = async () => {
+        if (memoInput.value.trim()) {
+            const confirmed = await showConfirmModal('입력 내용 삭제', '현재 입력된 내용을 모두 삭제하시겠습니까?');
+            if (confirmed) {
+                memoInput.value = '';
+                memoInput.focus();
+                
+                // 시각적 피드백
+                clearBtn.style.transform = 'scale(0.9)';
+                setTimeout(() => {
+                    clearBtn.style.transform = '';
+                }, 150);
+            }
         }
-    };
-
-    const handleCategoryHeaderClick = (e) => {
-        if (e.target.closest('button')) return;
-        const categoryItem = e.target.closest('.category-item');
-        const categoryId = categoryItem.dataset.id;
-
-        if (expandedCategoryId === categoryId) {
-            expandedCategoryId = null;
-        } else {
-            expandedCategoryId = categoryId;
-        }
-
-        if (activeCategoryId === categoryId) {
-            activeCategoryId = null;
-        } else {
-            activeCategoryId = categoryId;
-        }
-
-        render();
     };
 
     const handleMemoItemClick = (e) => {
+        if (e.target.closest('button')) return;
         const memoId = e.currentTarget.dataset.memoId;
         const memo = memos.find(m => m.id === memoId);
         if (memo) openViewModal(memo);
     };
 
-    const handleEditCategory = async (e) => {
-        e.stopPropagation();
-        const categoryId = e.target.closest('.category-item').dataset.id;
-        const category = categories.find(c => c.id === categoryId);
-        if (!category) return;
-
-        const newName = await showInputModal('카테고리 수정', '새 이름을 입력하세요', category.name);
-        if (newName) {
-            category.name = newName;
-            await saveData();
-            render();
-        }
-    };
-
-    const handleDeleteCategory = async (e) => {
-        e.stopPropagation();
-        const categoryId = e.target.closest('.category-item').dataset.id;
-        if (categoryId === 'in-box') return;
-
-        const category = categories.find(c => c.id === categoryId);
-        const confirmed = await showConfirmModal('카테고리 삭제', `정말 '${category.name}' 카테고리를 삭제하시겠습니까?\n\n경고: 이 카테고리에 포함된 모든 메모가 영구적으로 삭제됩니다.`);
-        
-        if (confirmed) {
-            // 카테고리에 속한 메모들을 삭제
-            memos = memos.filter(memo => memo.categoryId !== categoryId);
-            // 카테고리 삭제
-            categories = categories.filter(c => c.id !== categoryId);
-            
-            if (activeCategoryId === categoryId) activeCategoryId = null;
-            if (expandedCategoryId === categoryId) expandedCategoryId = null;
-
-            await saveData();
-            render();
-        }
-    };
-
-    const handlePinMemo = async (e) => {
+    const handleEditMemo = (e) => {
         e.stopPropagation();
         const memoId = e.target.dataset.memoId;
         const memo = memos.find(m => m.id === memoId);
-        if (!memo) return;
-
-        // 고정 상태 토글
-        memo.pinned = !memo.pinned;
-        
-        if (memo.pinned) {
-            // 고정될 때 현재 시간을 pinnedAt에 저장
-            memo.pinnedAt = Date.now();
-        } else {
-            // 고정 해제될 때 pinnedAt 제거
-            delete memo.pinnedAt;
-            
-            // 고정 해제된 메모는 일반 메모들 중 가장 큰 order 값보다 크게 설정
-            const categoryMemos = memos.filter(m => m.categoryId === memo.categoryId);
-            const unpinnedMemos = categoryMemos.filter(m => !m.pinned);
-            const maxUnpinnedOrder = unpinnedMemos.length > 0 ? Math.max(...unpinnedMemos.map(m => m.order || 0)) : 0;
-            memo.order = maxUnpinnedOrder + 1;
-        }
-
-        await saveData();
-        render();
+        if (memo) openEditModal(memo);
     };
 
-    const handleMoveCategoryUp = async (e) => {
+    const handleDeleteMemo = async (e) => {
         e.stopPropagation();
-        const categoryId = e.target.dataset.categoryId;
-        const category = categories.find(c => c.id === categoryId);
-        if (!category || category.id === 'in-box') return;
-
-        // IN-BOX를 제외한 카테고리들을 order로 정렬
-        const otherCategories = categories.filter(c => c.id !== 'in-box').sort((a, b) => (a.order || 0) - (b.order || 0));
-        const currentIndex = otherCategories.findIndex(c => c.id === categoryId);
+        const memoId = e.target.dataset.memoId;
+        const confirmed = await showConfirmModal('메모 삭제', '정말 이 메모를 삭제하시겠습니까?');
         
-        if (currentIndex > 0) {
-            // 현재 카테고리와 바로 위 카테고리의 order를 교환
-            const prevCategory = otherCategories[currentIndex - 1];
-            const tempOrder = category.order;
-            category.order = prevCategory.order;
-            prevCategory.order = tempOrder;
-            
-            await saveData();
-            render();
-        }
-    };
-
-    const handleMoveCategoryDown = async (e) => {
-        e.stopPropagation();
-        const categoryId = e.target.dataset.categoryId;
-        const category = categories.find(c => c.id === categoryId);
-        if (!category || category.id === 'in-box') return;
-
-        // IN-BOX를 제외한 카테고리들을 order로 정렬
-        const otherCategories = categories.filter(c => c.id !== 'in-box').sort((a, b) => (a.order || 0) - (b.order || 0));
-        const currentIndex = otherCategories.findIndex(c => c.id === categoryId);
-        
-        if (currentIndex < otherCategories.length - 1) {
-            // 현재 카테고리와 바로 아래 카테고리의 order를 교환
-            const nextCategory = otherCategories[currentIndex + 1];
-            const tempOrder = category.order;
-            category.order = nextCategory.order;
-            nextCategory.order = tempOrder;
-            
+        if (confirmed) {
+            memos = memos.filter(m => m.id !== memoId);
             await saveData();
             render();
         }
@@ -526,150 +206,73 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- 모달 관리 ---
     const openViewModal = (memo) => {
-        const viewModalContent = viewModal.querySelector('.modal-content');
-        const modalBody = viewModal.querySelector('.modal-body');
         const viewContent = document.getElementById('view-content');
         const modalFooter = document.getElementById('view-modal-footer');
 
-        // 상태 초기화
-        viewModalContent.style.top = '8%';
-        viewModalContent.style.transform = 'translateX(-50%)';
-        modalBody.style.position = 'relative'; // 책갈피 마커를 위한 기준점
-
-        const renderBookmarkUI = () => {
-            // 기존 UI 초기화
-            modalFooter.innerHTML = '';
-            const existingMarker = modalBody.querySelector('.bookmark-marker');
-            if (existingMarker) existingMarker.remove();
-
-            document.getElementById('view-title').textContent = memo.title;
+        document.getElementById('view-title').textContent = memo.title;
+        
+        // 마크다운 렌더링
+        try {
+            let contentToRender = memo.content;
             
-            // URL을 하이퍼링크로 변환하는 함수
-            const convertUrlsToLinks = (text) => {
-                const urlRegex = /(https?:\/\/[^\s<>"{}|\\^`\[\]]+)/gi;
-                return text.replace(urlRegex, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
-            };
-
-            // 마크다운 렌더링
-            try {
-                let contentToRender = memo.content;
-                
-                // 마크다운 링크가 아닌 일반 URL들을 먼저 마크다운 링크로 변환
-                contentToRender = contentToRender.replace(
-                    /(^|[^[\]()])(https?:\/\/[^\s<>"{}|\\^`\[\]]+)(?![^\[]*\])/gim,
-                    '$1[$2]($2)'
-                );
-                
-                const renderedContent = marked.parse(contentToRender);
-                viewContent.innerHTML = renderedContent;
-            } catch (error) {
-                // 마크다운 파싱 실패 시 일반 텍스트로 표시하되 URL은 링크로 변환
-                const textWithLinks = convertUrlsToLinks(memo.content);
-                viewContent.innerHTML = textWithLinks.replace(/\n/g, '<br>');
-            }
-
-            // 책갈피 마커 렌더링
-            if (memo.bookmarkPosition > 0) {
-                const marker = document.createElement('div');
-                marker.className = 'bookmark-marker';
-                marker.innerHTML = '🔖';
-                marker.style.top = `${memo.bookmarkPosition}px`; 
-                modalBody.appendChild(marker);
-            }
-
-            // 버튼 렌더링
-            const setBookmarkBtn = document.createElement('button');
-            setBookmarkBtn.id = 'set-bookmark-btn';
-            setBookmarkBtn.className = 'modal-btn';
-            setBookmarkBtn.textContent = '책갈피';
-            setBookmarkBtn.onclick = async () => {
-                if (memo.bookmarkPosition > 0) {
-                    // 이미 책갈피가 설정되어 있으면 초기화
-                    memo.bookmarkPosition = 0;
-                } else {
-                    // 책갈피 설정
-                    memo.bookmarkPosition = modalBody.scrollTop;
-                }
-                await saveData();
-                renderBookmarkUI(); // UI 즉시 업데이트
-            };
-
-            const gotoBookmarkBtn = document.createElement('button');
-            gotoBookmarkBtn.id = 'goto-bookmark-btn';
-            gotoBookmarkBtn.className = 'modal-btn';
-            gotoBookmarkBtn.textContent = '이동';
-            gotoBookmarkBtn.style.display = memo.bookmarkPosition > 0 ? 'inline-block' : 'none';
-            gotoBookmarkBtn.onclick = () => {
-                modalBody.scrollTo({ top: memo.bookmarkPosition, behavior: 'smooth' });
-            };
+            // 마크다운 링크가 아닌 일반 URL들을 먼저 마크다운 링크로 변환
+            contentToRender = contentToRender.replace(
+                /(^|[^[\]()])(https?:\/\/[^\s<>"{}|\\^`\[\]]+)(?![^\[]*\])/gim,
+                '$1[$2]($2)'
+            );
             
-            const copyBtn = document.createElement('button');
-            copyBtn.textContent = '복사';
-            copyBtn.className = 'modal-btn';
-            copyBtn.onclick = async () => {
-                try {
-                    await navigator.clipboard.writeText(memo.content);
-                } catch (err) {
-                    await showAlertModal('복사 실패', '클립보드 복사에 실패했습니다.');
-                }
-            };
-
-            const editBtn = document.createElement('button');
-            editBtn.textContent = '수정';
-            editBtn.className = 'modal-btn';
-            editBtn.onclick = () => {
-                viewModal.style.display = 'none';
-                openEditModal(memo);
-            };
-
-            const deleteBtn = document.createElement('button');
-            deleteBtn.textContent = '삭제';
-            deleteBtn.className = 'modal-btn';
-            
-            // 고정된 메모는 삭제 버튼을 비활성화
-            if (memo.pinned) {
-                deleteBtn.disabled = true;
-                deleteBtn.title = '고정된 메모는 삭제할 수 없습니다. 먼저 고정을 해제하세요.';
-                deleteBtn.style.opacity = '0.5';
-                deleteBtn.style.cursor = 'not-allowed';
-            } else {
-                deleteBtn.onclick = async () => {
-                    const confirmed = await showConfirmModal('메모 삭제', '정말 이 메모를 삭제하시겠습니까?');
-                    if (confirmed) {
-                        memos = memos.filter(m => m.id !== memo.id);
-                        await saveData();
-                        render();
-                        closeModal();
-                    }
-                };
-            }
-
-            modalFooter.append(setBookmarkBtn, gotoBookmarkBtn, copyBtn, editBtn, deleteBtn);
+            const renderedContent = marked.parse(contentToRender);
+            viewContent.innerHTML = renderedContent;
+        } catch (error) {
+            // 마크다운 파싱 실패 시 일반 텍스트로 표시
+            viewContent.innerHTML = memo.content.replace(/\n/g, '<br>');
         }
 
-        renderBookmarkUI();
+        // 버튼 렌더링
+        modalFooter.innerHTML = '';
+        
+        const copyBtn = document.createElement('button');
+        copyBtn.textContent = '복사';
+        copyBtn.className = 'modal-btn';
+        copyBtn.onclick = async () => {
+            try {
+                await navigator.clipboard.writeText(memo.content);
+            } catch (err) {
+                await showAlertModal('복사 실패', '클립보드 복사에 실패했습니다.');
+            }
+        };
+
+        const editBtn = document.createElement('button');
+        editBtn.textContent = '수정';
+        editBtn.className = 'modal-btn';
+        editBtn.onclick = () => {
+            viewModal.style.display = 'none';
+            openEditModal(memo);
+        };
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.textContent = '삭제';
+        deleteBtn.className = 'modal-btn';
+        deleteBtn.onclick = async () => {
+            const confirmed = await showConfirmModal('메모 삭제', '정말 이 메모를 삭제하시겠습니까?');
+            if (confirmed) {
+                memos = memos.filter(m => m.id !== memo.id);
+                await saveData();
+                render();
+                closeModal();
+            }
+        };
+
+        modalFooter.append(copyBtn, editBtn, deleteBtn);
         viewModal.style.display = 'flex';
-        // 모달이 열린 직후 스크롤 위치를 0으로 초기화
-        setTimeout(() => { modalBody.scrollTop = 0; }, 0);
     };
 
     const openEditModal = (memo) => {
         document.getElementById('edit-id').value = memo.id;
         document.getElementById('edit-input').value = memo.content;
-        
-        const categorySelect = document.getElementById('edit-category');
-        categorySelect.innerHTML = categories.map(c => 
-            `<option value="${c.id}" ${c.id === memo.categoryId ? 'selected' : ''}>${c.name}</option>`
-        ).join('');
-
-        const editModalContent = editModal.querySelector('.modal-content');
-        editModalContent.style.top = '5%';
-        editModalContent.style.left = '50%';
-        editModalContent.style.transform = 'translateX(-50%)';
 
         setTimeout(() => {
             document.getElementById('edit-input').focus();
-            document.getElementById('edit-input').scrollIntoView({ behavior: 'smooth', block: 'center' });
         }, 100);
 
         editModal.style.display = 'flex';
@@ -679,7 +282,6 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         const id = document.getElementById('edit-id').value;
         const content = document.getElementById('edit-input').value.trim();
-        const categoryId = document.getElementById('edit-category').value;
 
         if (!content) return;
 
@@ -687,7 +289,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (memo) {
             memo.content = content;
             memo.title = content.split('\n')[0];
-            memo.categoryId = categoryId;
         }
 
         await saveData();
@@ -713,8 +314,8 @@ document.addEventListener('DOMContentLoaded', () => {
         await loadData();
         render();
 
-        memoForm.addEventListener('submit', handleQuickMemoSubmit);
-        addCategoryBtn.addEventListener('click', handleAddCategory);
+        memoForm.addEventListener('submit', handleMemoSubmit);
+        clearBtn.addEventListener('click', handleClearBtn);
         editForm.addEventListener('submit', handleEditFormSubmit);
         closeModalBtns.forEach(btn => btn.addEventListener('click', closeModal));
         window.addEventListener('click', (e) => {
@@ -728,4 +329,394 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     initialize();
+
+    // === 클립보드 버튼 시스템 ===
+    const clipboardContent = document.getElementById('clipboard-content');
+    const contextMenu = document.getElementById('clipboard-context-menu');
+    const colorPalette = document.getElementById('color-palette');
+    let currentBtn = null;
+    let draggedBtn = null;
+    let lastCopiedText = ''; // 마지막 복사된 텍스트 저장
+
+    // 클립보드 버튼 초기화
+    const initClipboardButtons = () => {
+        // 각 버튼에 색상 설정
+        document.querySelectorAll('.clipboard-btn').forEach(btn => {
+            const color = btn.dataset.color;
+            if (color) {
+                btn.style.setProperty('--btn-color', color);
+                btn.style.background = color; // 직접 배경색도 설정
+            }
+            setupButtonEvents(btn);
+        });
+    };
+
+    // 버튼 이벤트 설정
+    const setupButtonEvents = (btn) => {
+        // 클릭 이벤트 (복사)
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const content = btn.dataset.content || btn.dataset.text; // content 우선, 없으면 text 사용
+            lastCopiedText = content;
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(content).then(() => {
+                    showCopyFeedback(btn);
+                });
+            }
+        });
+
+        // 우클릭 컨텍스트 메뉴
+        btn.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            currentBtn = btn;
+            showContextMenu(e.clientX, e.clientY);
+        });
+
+        // 드래그 앤 드롭
+        btn.draggable = true;
+        btn.addEventListener('dragstart', handleDragStart);
+        btn.addEventListener('dragover', handleDragOver);
+        btn.addEventListener('drop', handleDrop);
+        btn.addEventListener('dragend', handleDragEnd);
+    };
+
+    // 복사 완료 피드백
+    const showCopyFeedback = (btn) => {
+        const originalBg = btn.style.getPropertyValue('--btn-color');
+        btn.style.setProperty('--btn-color', '#4CAF50');
+        btn.style.transform = 'scale(1.1)';
+        
+        setTimeout(() => {
+            btn.style.setProperty('--btn-color', originalBg);
+            btn.style.transform = '';
+        }, 200);
+    };
+
+    // 컨텍스트 메뉴 표시
+    const showContextMenu = (x, y) => {
+        contextMenu.style.left = x + 'px';
+        contextMenu.style.top = y + 'px';
+        contextMenu.style.display = 'block';
+    };
+
+    // 컨텍스트 메뉴 숨기기
+    const hideContextMenu = () => {
+        contextMenu.style.display = 'none';
+        currentBtn = null;
+    };
+
+    // 색상 팔레트 표시
+    const showColorPalette = (x, y) => {
+        colorPalette.style.left = x + 'px';
+        colorPalette.style.top = y + 'px';
+        colorPalette.classList.add('show');
+    };
+
+    // 색상 팔레트 숨기기
+    const hideColorPalette = () => {
+        colorPalette.classList.remove('show');
+    };
+
+    // 드래그 앤 드롭 이벤트
+    const handleDragStart = (e) => {
+        draggedBtn = e.target;
+        e.target.classList.add('dragging');
+    };
+
+    const handleDragOver = (e) => {
+        e.preventDefault();
+        if (e.target.classList.contains('clipboard-btn') && e.target !== draggedBtn) {
+            e.target.classList.add('drag-over');
+        }
+    };
+
+    const handleDrop = (e) => {
+        e.preventDefault();
+        if (e.target.classList.contains('clipboard-btn') && e.target !== draggedBtn) {
+            // 버튼 순서 바꾸기
+            const draggedIndex = Array.from(clipboardContent.children).indexOf(draggedBtn);
+            const targetIndex = Array.from(clipboardContent.children).indexOf(e.target);
+            
+            if (draggedIndex < targetIndex) {
+                clipboardContent.insertBefore(draggedBtn, e.target.nextSibling);
+            } else {
+                clipboardContent.insertBefore(draggedBtn, e.target);
+            }
+        }
+        
+        // 드래그 상태 클래스 제거
+        document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+    };
+
+    const handleDragEnd = (e) => {
+        e.target.classList.remove('dragging');
+        draggedBtn = null;
+    };
+
+    // 컨텍스트 메뉴 클릭 이벤트
+    document.addEventListener('click', (e) => {
+        if (e.target.classList.contains('context-item')) {
+            const action = e.target.dataset.action;
+            
+            switch(action) {
+                case 'edit':
+                    editButtonText();
+                    break;
+                case 'color':
+                    const rect = e.target.getBoundingClientRect();
+                    showColorPalette(rect.right + 10, rect.top);
+                    break;
+                case 'delete':
+                    deleteButton();
+                    break;
+                case 'cancel':
+                    break;
+            }
+            hideContextMenu();
+        }
+        
+        if (e.target.classList.contains('color-item')) {
+            const color = e.target.dataset.color;
+            if (currentBtn) {
+                currentBtn.dataset.color = color;
+                currentBtn.style.setProperty('--btn-color', color);
+                currentBtn.style.background = color; // 직접 배경색도 설정
+            }
+            hideColorPalette();
+        }
+        
+        // 클릭이 메뉴 외부일 때 메뉴 숨기기
+        if (!contextMenu.contains(e.target) && !colorPalette.contains(e.target)) {
+            hideContextMenu();
+            hideColorPalette();
+        }
+    });
+
+    // 버튼 텍스트 편집 (새 모달 방식으로 교체됨)
+
+    // 버튼 삭제
+    const deleteButton = async () => {
+        if (!currentBtn) return;
+        
+        const confirmed = await showConfirmModal('삭제 확인', '이 버튼을 삭제하시겠습니까?');
+        if (confirmed) {
+            currentBtn.remove();
+        }
+    };
+
+    // === 더블클릭 붙여넣기 시스템 ===
+    
+    // 입력 가능한 요소인지 확인
+    const isInputElement = (element) => {
+        const tagName = element.tagName.toLowerCase();
+        const inputTypes = ['text', 'textarea', 'email', 'password', 'search', 'url'];
+        
+        if (tagName === 'textarea') return true;
+        if (tagName === 'input' && inputTypes.includes(element.type)) return true;
+        if (element.contentEditable === 'true') return true;
+        
+        return false;
+    };
+
+    // 커서 위치에 텍스트 삽입
+    const insertTextAtCursor = (element, text) => {
+        if (element.tagName.toLowerCase() === 'textarea' || 
+            (element.tagName.toLowerCase() === 'input' && element.type === 'text')) {
+            
+            const startPos = element.selectionStart;
+            const endPos = element.selectionEnd;
+            const beforeText = element.value.substring(0, startPos);
+            const afterText = element.value.substring(endPos);
+            
+            element.value = beforeText + text + afterText;
+            element.selectionStart = element.selectionEnd = startPos + text.length;
+            element.focus();
+        } else if (element.contentEditable === 'true') {
+            // contentEditable 요소의 경우
+            element.focus();
+            document.execCommand('insertText', false, text);
+        }
+    };
+
+    // 붙여넣기 피드백 효과
+    const showPasteFeedback = (element) => {
+        element.classList.add('paste-feedback');
+        setTimeout(() => {
+            element.classList.remove('paste-feedback');
+        }, 600);
+    };
+
+    // 입력 가능한 요소에 호버 효과 추가
+    const addInputHoverEffects = () => {
+        document.addEventListener('mouseover', (e) => {
+            if (isInputElement(e.target) && lastCopiedText) {
+                e.target.classList.add('input-element');
+                if (lastCopiedText) {
+                    e.target.classList.add('paste-ready');
+                }
+            }
+        });
+
+        document.addEventListener('mouseout', (e) => {
+            if (e.target.classList.contains('input-element')) {
+                e.target.classList.remove('input-element', 'paste-ready');
+            }
+        });
+    };
+
+    // 더블클릭 붙여넣기 이벤트
+    document.addEventListener('dblclick', (e) => {
+        if (isInputElement(e.target) && lastCopiedText) {
+            e.preventDefault();
+            insertTextAtCursor(e.target, lastCopiedText);
+            showPasteFeedback(e.target);
+            
+            // 선택적: 붙여넣기 성공 알림 (조용한 방식)
+            const rect = e.target.getBoundingClientRect();
+            showQuietNotification('붙여넣기 완료', rect.left, rect.top - 30);
+        }
+    });
+
+    // 조용한 알림 (작은 툴팁 형태)
+    const showQuietNotification = (message, x, y) => {
+        const notification = document.createElement('div');
+        notification.textContent = message;
+        notification.style.cssText = `
+            position: fixed;
+            left: ${x}px;
+            top: ${y}px;
+            background: rgba(76, 175, 80, 0.9);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            z-index: 10000;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        `;
+        
+        document.body.appendChild(notification);
+        
+        // 애니메이션
+        setTimeout(() => notification.style.opacity = '1', 10);
+        setTimeout(() => {
+            notification.style.opacity = '0';
+            setTimeout(() => document.body.removeChild(notification), 200);
+        }, 1500);
+    };
+
+    // === 클립보드 버튼 생성/편집 시스템 ===
+    const addClipboardBtn = document.getElementById('add-clipboard-btn');
+    const createModal = document.getElementById('clipboard-create-modal');
+    const clipboardEditModal = document.getElementById('clipboard-edit-modal');
+    const createForm = document.getElementById('clipboard-create-form');
+    const clipboardEditForm = document.getElementById('clipboard-edit-form');
+
+    // DOM 요소 확인
+    console.log('DOM elements check:', {
+        addClipboardBtn: !!addClipboardBtn,
+        createModal: !!createModal,
+        clipboardEditModal: !!clipboardEditModal,
+        createForm: !!createForm,
+        clipboardEditForm: !!clipboardEditForm
+    });
+
+    // 새 클립보드 버튼 생성
+    const createClipboardButton = (title, content, color = '#4ecdc4') => {
+        const btn = document.createElement('div');
+        btn.className = 'clipboard-btn';
+        btn.dataset.title = title;
+        btn.dataset.content = content;
+        btn.dataset.color = color;
+        btn.textContent = title;
+        btn.style.setProperty('--btn-color', color);
+        btn.style.background = color; // 직접 배경색도 설정
+        
+        setupButtonEvents(btn);
+        return btn;
+    };
+
+    // 클립보드 버튼 추가 이벤트
+    if (addClipboardBtn) {
+        addClipboardBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('Add button clicked'); // 디버깅용
+            createModal.style.display = 'flex';
+            setTimeout(() => {
+                document.getElementById('clipboard-title').focus();
+            }, 100);
+        });
+    } else {
+        console.error('Add clipboard button not found');
+    }
+
+    // 생성 폼 제출
+    if (createForm) {
+        createForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const title = document.getElementById('clipboard-title').value.trim();
+            const content = document.getElementById('clipboard-content-input').value.trim();
+            
+            if (title && content) {
+                const newBtn = createClipboardButton(title, content);
+                clipboardContent.appendChild(newBtn);
+                
+                createForm.reset();
+                createModal.style.display = 'none';
+            }
+        });
+    }
+
+    // 편집 폼 제출
+    if (clipboardEditForm) {
+        clipboardEditForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const title = document.getElementById('edit-clipboard-title').value.trim();
+            const content = document.getElementById('edit-clipboard-content').value.trim();
+            
+            if (title && content && currentBtn) {
+                currentBtn.dataset.title = title;
+                currentBtn.dataset.content = content;
+                currentBtn.textContent = title;
+                
+                clipboardEditForm.reset();
+                clipboardEditModal.style.display = 'none';
+            }
+        });
+    }
+
+    // 수정된 편집 버튼 텍스트 함수
+    const editButtonText = () => {
+        if (!currentBtn) return;
+        
+        document.getElementById('edit-clipboard-title').value = currentBtn.dataset.title || currentBtn.textContent;
+        document.getElementById('edit-clipboard-content').value = currentBtn.dataset.content || currentBtn.dataset.text || '';
+        
+        clipboardEditModal.style.display = 'flex';
+        document.getElementById('edit-clipboard-title').focus();
+    };
+
+    // 모든 모달 닫기 이벤트
+    document.addEventListener('click', (e) => {
+        if (e.target.classList.contains('close-btn')) {
+            createModal.style.display = 'none';
+            clipboardEditModal.style.display = 'none';
+            if (createForm) createForm.reset();
+            if (clipboardEditForm) clipboardEditForm.reset();
+        }
+        
+        if (e.target === createModal || e.target === clipboardEditModal) {
+            createModal.style.display = 'none';
+            clipboardEditModal.style.display = 'none';
+            if (createForm) createForm.reset();
+            if (clipboardEditForm) clipboardEditForm.reset();
+        }
+    });
+
+    // 클립보드 버튼 시스템 초기화
+    initClipboardButtons();
+    addInputHoverEffects();
 });

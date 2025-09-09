@@ -26,12 +26,12 @@ body {
     padding: 0; /* 패딩 제거 */
 }
 
-/* 상단 빠른 메모 섹션 - 고정 영역 */
+/* 상단 메모 입력 섹션 - 고정 영역 */
 #quick-memo-section {
-    background: white;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     padding: 20px;
-    border-radius: 0 0 20px 20px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    border-radius: 20px 20px 0 0;
+    box-shadow: none;
     flex-shrink: 0;
 }
 
@@ -39,28 +39,29 @@ body {
     font-size: 24px;
     margin-bottom: 15px;
     font-weight: 700;
-    color: #2c3e50;
+    color: white;
     letter-spacing: -0.5px;
 }
 
 #current-datetime {
     font-size: 14px;
-    opacity: 1;
+    opacity: 0.9;
     font-weight: normal;
     margin-left: 8px;
-    color: red;
+    color: rgba(255, 255, 255, 0.8);
 }
 
 #memo-form {
     display: flex;
     flex-direction: column;
     gap: 10px;
+    position: relative;
 }
 
 #memo-input {
-    min-height: 100px;
-    padding: 15px;
-    border: 2px solid #e2e8f0;
+    min-height: 350px;
+    padding: 15px 15px 50px 15px;
+    border: 2px solid #000000;
     border-radius: 15px;
     font-size: 16px;
     resize: vertical;
@@ -75,23 +76,25 @@ body {
 }
 
 .button-row {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    z-index: 10;
     display: flex;
-    justify-content: space-between;
-    gap: 10px;
-    align-items: center;
+    gap: 8px;
 }
 
 #memo-form button[type="submit"] {
-    padding: 12px 24px;
+    padding: 6px 12px;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
     border: none;
-    border-radius: 20px;
-    font-size: 16px;
+    border-radius: 10px;
+    font-size: 8px;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
 }
 
 #memo-form button[type="submit"]:hover {
@@ -99,177 +102,364 @@ body {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
-#add-category-btn {
-    padding: 12px 24px;
-    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+#clear-btn {
+    padding: 6px 12px;
+    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
     color: white;
     border: none;
-    border-radius: 20px;
-    font-size: 16px;
+    border-radius: 10px;
+    font-size: 8px;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(72, 187, 120, 0.3);
+    box-shadow: 0 2px 8px rgba(231, 76, 60, 0.3);
 }
 
-#add-category-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(72, 187, 120, 0.4);
+#clear-btn:hover {
+    opacity: 0.9;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    transform: translateY(-1px);
 }
 
-/* 카테고리 섹션 - 스크롤 영역 */
-#category-section {
-    background: white;
-    padding: 20px;
-    border-radius: 20px 20px 0 0;
-    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+
+/* 메모 목록 섹션 - 스크롤 영역 */
+#memo-section {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 0;
+    border-radius: 0 0 20px 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
     flex: 1;
-    overflow-y: auto; /* 세로 스크롤 활성화 */
-    margin-top: 10px; /* 상단 영역과 간격 */
-    /* 모바일 스크롤 최적화 */
-    -webkit-overflow-scrolling: touch;
-    /* 하단 안전 영역 확보 - 매우 큰 여백으로 확실하게 해결 */
-    padding-bottom: 200px;
-}
-
-
-/* 카테고리 아코디언 */
-#category-accordion {
+    margin-top: 0;
     display: flex;
     flex-direction: column;
-    gap: 10px;
-}
-
-.category-item {
-    border: 2px solid #2c3e50;
-    border-radius: 20px;
     overflow: hidden;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-    margin: 0;
 }
 
-.category-item.selected {
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
-}
-
-.category-header {
-    padding: 15px;
-    background: var(--category-bg-color); /* 배경색을 변수로 설정 */
-    color: white; /* 텍스트 색상을 흰색으로 */
-    cursor: pointer;
+/* 메모 영역 - 상단 절반 */
+#memo-area {
+    flex: 1;
+    padding: 5px 15px 15px 15px;
+    overflow: hidden;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.3);
     display: flex;
-    justify-content: space-between;
+    flex-direction: column;
+    justify-content: flex-start;
+}
+
+/* 클립보드 영역 - 하단 절반 */
+#clipboard-area {
+    flex: 1;
+    padding: 5px;
+    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+    border-radius: 0 0 20px 20px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 클립보드 헤더 */
+.clipboard-header {
+    display: flex;
     align-items: center;
+    justify-content: space-between;
+    margin-bottom: 5px;
+    gap: 8px;
+}
+
+/* 클립보드 가이드 텍스트 */
+.clipboard-guide {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 11px;
+    font-weight: 600;
+    text-align: center;
+    padding: 5px 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 5px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    flex: 1;
+}
+
+/* 추가 버튼 */
+.add-btn {
+    width: 30px;
+    height: 30px;
+    background: rgba(255, 255, 255, 0.9);
+    border: 2px solid #333;
+    border-radius: 50%;
+    color: #333;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.add-btn:hover {
+    background: #fff;
+    transform: scale(1.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+
+#clipboard-content {
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 10px;
+    padding: 15px;
+    flex: 1;
+    color: #333;
+    font-size: 14px;
+    line-height: 1.5;
+    border: 2px solid #000000;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-content: flex-start;
+    overflow-y: auto;
+}
+
+/* 클립보드 버튼 스타일 */
+.clipboard-btn {
+    width: 80px;
+    height: 35px;
+    border: 2px solid #333;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    color: #333;
+    transition: all 0.2s ease;
+    user-select: none;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+    position: relative;
+    background: var(--btn-color, #ffffff);
+}
+
+.clipboard-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    border-color: #000;
+}
+
+.clipboard-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* 드래그 중 스타일 */
+.clipboard-btn.dragging {
+    opacity: 0.5;
+    transform: rotate(5deg);
+}
+
+.clipboard-btn.drag-over {
+    border-color: #007bff;
+    background: rgba(0, 123, 255, 0.1);
+}
+
+/* 컨텍스트 메뉴 스타일 */
+.context-menu {
+    position: fixed;
+    background: white;
+    border: 2px solid #333;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    z-index: 9999;
+    display: none;
+    min-width: 120px;
+}
+
+.context-item {
+    padding: 10px 15px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    border-bottom: 1px solid #eee;
     transition: background-color 0.2s ease;
 }
 
-.category-header:hover {
-    background: var(--category-bg-color, #edf2f7); /* 호버 시 약간 어둡게 */
-    filter: brightness(0.9); /* 호버 시 약간 어둡게 */
+.context-item:last-child {
+    border-bottom: none;
 }
 
-.category-header h3 {
-    font-size: 18px;
-    font-weight: 700;
-    color: #2c3e50;
-    letter-spacing: -0.3px;
-    text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+.context-item:hover {
+    background: #f0f0f0;
 }
 
-.category-controls-buttons {
-    display: flex;
-    gap: 4px;
-    align-items: center;
+.context-item[data-action="delete"] {
+    color: #e74c3c;
 }
 
-.move-category-up-btn, .move-category-down-btn {
-    background: rgba(255, 255, 255, 0.2);
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    cursor: pointer;
-    padding: 6px 8px;
-    font-size: 12px;
-    border-radius: 15px;
-    transition: all 0.2s ease;
-    line-height: 1;
-    opacity: 0.8;
+.context-item[data-action="delete"]:hover {
+    background: #fee;
 }
 
-.move-category-up-btn:hover, .move-category-down-btn:hover {
-    opacity: 1;
-    background: rgba(255, 255, 255, 0.4);
-    transform: scale(1.05);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.edit-category-btn, .delete-category-btn {
-    background: rgba(255, 255, 255, 0.9);
-    border: none;
-    cursor: pointer;
-    padding: 6px 12px;
-    font-size: 13px;
-    font-weight: 600;
-    border-radius: 15px;
-    transition: all 0.2s ease;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.edit-category-btn {
-    color: #3182ce;
-}
-
-.edit-category-btn:hover {
-    background: #3182ce;
-    color: white;
-    transform: translateY(-1px);
-}
-
-.delete-category-btn {
-    color: #e53e3e;
-}
-
-.delete-category-btn:hover {
-    background: #e53e3e;
-    color: white;
-    transform: translateY(-1px);
-}
-
-.memo-list-inner {
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.4s ease-in-out, padding 0.4s ease-in-out;
+/* 색상 팔레트 스타일 */
+.color-palette {
+    position: fixed;
     background: white;
-    padding: 0 15px;
+    border: 2px solid #333;
+    border-radius: 10px;
+    padding: 15px;
+    display: none;
+    z-index: 9999;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    width: 200px;
 }
 
-.category-item.expanded > .memo-list-inner {
-    max-height: 1000px; /* 충분히 큰 값 */
-    padding: 15px;
-    border-top: 1px solid #e2e8f0;
+.color-palette.show {
+    display: grid;
+}
+
+.color-item {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 3px solid #fff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    transition: all 0.2s ease;
+}
+
+.color-item:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.color-item[data-color="#ff6b6b"] { background: #ff6b6b; }
+.color-item[data-color="#4ecdc4"] { background: #4ecdc4; }
+.color-item[data-color="#45b7d1"] { background: #45b7d1; }
+.color-item[data-color="#96ceb4"] { background: #96ceb4; }
+.color-item[data-color="#ffeaa7"] { background: #ffeaa7; }
+.color-item[data-color="#dda0dd"] { background: #dda0dd; }
+.color-item[data-color="#fd79a8"] { background: #fd79a8; }
+.color-item[data-color="#fdcb6e"] { background: #fdcb6e; }
+.color-item[data-color="#6c5ce7"] { background: #6c5ce7; }
+.color-item[data-color="#a29bfe"] { background: #a29bfe; }
+.color-item[data-color="#e17055"] { background: #e17055; }
+
+/* 붙여넣기 피드백 애니메이션 */
+@keyframes pasteGlow {
+    0% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7); }
+    50% { box-shadow: 0 0 0 8px rgba(76, 175, 80, 0.3); }
+    100% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0); }
+}
+
+.paste-feedback {
+    animation: pasteGlow 0.6s ease-out;
+}
+
+/* 입력 가능한 요소 호버 효과 */
+.input-element:hover {
+    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.3) !important;
+    cursor: text !important;
+}
+
+.input-element.paste-ready {
+    outline: 2px dashed rgba(76, 175, 80, 0.6) !important;
+    outline-offset: 2px;
+}
+
+
+/* 메모 목록 */
+#memo-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    max-height: none;
+    border: 2px solid #000000;
+    border-radius: 10px;
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.1);
 }
 
 .memo-item {
-    padding: 8px 12px;
-    margin: 6px 0;
-    border: 2px solid #e8f0fe;
-    border-radius: 15px;
+    padding: 8px 15px;
+    margin: 0;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 6px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     cursor: pointer;
-    background: white; /* 기본 배경색 */
-    transition: all 0.2s ease; /* 부드러운 전환 효과 */
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15); /* 음영도 약간 줄임 */
-    position: relative; /* 드래그 핸들을 위한 position */
-    min-height: 28px; /* 최소 높이 설정 */
+    background: rgba(255, 255, 255, 0.9);
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+    position: relative;
+    height: 40px;
+    flex-shrink: 0;
+}
+
+/* 은은한 컬러 테마 - 각 메모에 다른 색상 적용 */
+.memo-item:nth-child(6n+1) {
+    background: linear-gradient(135deg, #fef5e7 0%, #ffffff 100%);
+    border-color: #fed7aa;
+}
+
+.memo-item:nth-child(6n+2) {
+    background: linear-gradient(135deg, #ecfdf5 0%, #ffffff 100%);
+    border-color: #bbf7d0;
+}
+
+.memo-item:nth-child(6n+3) {
+    background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%);
+    border-color: #bfdbfe;
+}
+
+.memo-item:nth-child(6n+4) {
+    background: linear-gradient(135deg, #fdf2f8 0%, #ffffff 100%);
+    border-color: #fbcfe8;
+}
+
+.memo-item:nth-child(6n+5) {
+    background: linear-gradient(135deg, #f0f9ff 0%, #ffffff 100%);
+    border-color: #bae6fd;
+}
+
+.memo-item:nth-child(6n+6) {
+    background: linear-gradient(135deg, #fefce8 0%, #ffffff 100%);
+    border-color: #fef08a;
 }
 
 .memo-item:hover {
-    background: #f7fafc;
-    border-color: #000000; /* 호버 시 더 진한 검정색 */
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); /* 호버 시 더 강한 음영 */
-    transform: translateY(-2px); /* 더 높이 올라가는 효과 */
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+    filter: brightness(0.95);
+}
+
+/* 각 컬러별 hover 효과 */
+.memo-item:nth-child(6n+1):hover {
+    box-shadow: 0 4px 15px rgba(249, 115, 22, 0.2);
+}
+
+.memo-item:nth-child(6n+2):hover {
+    box-shadow: 0 4px 15px rgba(34, 197, 94, 0.2);
+}
+
+.memo-item:nth-child(6n+3):hover {
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.2);
+}
+
+.memo-item:nth-child(6n+4):hover {
+    box-shadow: 0 4px 15px rgba(236, 72, 153, 0.2);
+}
+
+.memo-item:nth-child(6n+5):hover {
+    box-shadow: 0 4px 15px rgba(14, 165, 233, 0.2);
+}
+
+.memo-item:nth-child(6n+6):hover {
+    box-shadow: 0 4px 15px rgba(234, 179, 8, 0.2);
 }
 
 /* 드래그 앤 드롭 스타일 */
@@ -292,25 +482,6 @@ body {
     opacity: 0.5;
 }
 
-.sortable-ghost {
-    opacity: 0.4;
-    background: #e2e8f0 !important;
-    border-color: #3182ce !important;
-    transform: rotate(2deg);
-}
-
-.sortable-chosen {
-    background: #ebf8ff !important;
-    border-color: #3182ce !important;
-    box-shadow: 0 8px 25px rgba(49, 130, 206, 0.25) !important;
-    transform: scale(1.02);
-}
-
-.sortable-drag {
-    background: white !important;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3) !important;
-    transform: rotate(5deg) scale(1.05);
-}
 
 .memo-title {
     font-weight: 600;
@@ -323,13 +494,45 @@ body {
 
 .memo-actions {
     display: flex;
-    gap: 4px; /* 버튼 간격도 줄임 */
+    gap: 6px;
     opacity: 0;
     transition: opacity 0.2s ease;
 }
 
 .memo-item:hover .memo-actions {
     opacity: 1;
+}
+
+.edit-btn, .delete-btn {
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid #ddd;
+    cursor: pointer;
+    padding: 4px 8px;
+    font-size: 12px;
+    font-weight: 500;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.edit-btn {
+    color: #3182ce;
+}
+
+.edit-btn:hover {
+    background: #3182ce;
+    color: white;
+    transform: translateY(-1px);
+}
+
+.delete-btn {
+    color: #e53e3e;
+}
+
+.delete-btn:hover {
+    background: #e53e3e;
+    color: white;
+    transform: translateY(-1px);
 }
 
 .pin-btn {
@@ -783,4 +986,26 @@ body {
     gap: 10px;
     padding: 15px;
     border-top: 1px solid #e2e8f0;
+}
+
+/* 클립보드 모달 전용 스타일 */
+#clipboard-create-modal .form-group,
+#clipboard-edit-modal .form-group {
+    margin-bottom: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+#clipboard-create-modal .form-group label,
+#clipboard-edit-modal .form-group label {
+    font-weight: 600;
+    font-size: 14px;
+    color: #333;
+}
+
+#clipboard-content-input,
+#edit-clipboard-content {
+    resize: vertical;
+    min-height: 60px;
 }

@@ -6,25 +6,77 @@
     <title>스마트메모</title>
     <link rel="stylesheet" href="sidebar-v2.css">
     <link rel="icon" href="icons/icon128.png">
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="marked.min.js"></script>
     <script src="sortable.min.js"></script>
 </head>
 <body>
     <div class="main-container">
         <header id="quick-memo-section">
-            <h2>빠른 메모 <span id="current-datetime"></span></h2>
+            <h2>메모장 <span id="current-datetime"></span></h2>
             <form id="memo-form">
                 <textarea id="memo-input" placeholder="메모를 입력하세요. 첫 줄은 제목이 됩니다."></textarea>
                 <div class="button-row">
-                    <button type="button" id="add-category-btn">새 카테고리 추가</button>
+                    <button type="button" id="clear-btn">초기화</button>
                     <button type="submit">저장</button>
                 </div>
             </form>
         </header>
 
-        <main id="category-section">
-            <div id="category-accordion">
-                <!-- 카테고리와 메모가 여기에 동적으로 생성됩니다. -->
+        <main id="memo-section">
+            <div id="memo-area">
+                <div id="memo-list">
+                    <!-- 메모 목록이 여기에 동적으로 생성됩니다. -->
+                    <div class="memo-item">
+                        <div class="memo-title">빈 문서 1</div>
+                        <div class="memo-actions">
+                            <button class="edit-btn">편집</button>
+                            <button class="delete-btn">삭제</button>
+                        </div>
+                    </div>
+                    <div class="memo-item">
+                        <div class="memo-title">빈 문서 2</div>
+                        <div class="memo-actions">
+                            <button class="edit-btn">편집</button>
+                            <button class="delete-btn">삭제</button>
+                        </div>
+                    </div>
+                    <div class="memo-item">
+                        <div class="memo-title">빈 문서 3</div>
+                        <div class="memo-actions">
+                            <button class="edit-btn">편집</button>
+                            <button class="delete-btn">삭제</button>
+                        </div>
+                    </div>
+                    <div class="memo-item">
+                        <div class="memo-title">빈 문서 4</div>
+                        <div class="memo-actions">
+                            <button class="edit-btn">편집</button>
+                            <button class="delete-btn">삭제</button>
+                        </div>
+                    </div>
+                    <div class="memo-item">
+                        <div class="memo-title">빈 문서 5</div>
+                        <div class="memo-actions">
+                            <button class="edit-btn">편집</button>
+                            <button class="delete-btn">삭제</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="clipboard-area">
+                <div class="clipboard-header">
+                    <div class="clipboard-guide">클릭=복사 | 더블클릭=붙여넣기</div>
+                    <button id="add-clipboard-btn" class="add-btn">+</button>
+                </div>
+                <div id="clipboard-content">
+                    <!-- 클립보드 버튼들이 여기에 들어갑니다 -->
+                    <div class="clipboard-btn" data-title="안녕하세요" data-content="안녕하세요. 반갑습니다!" data-color="#ff6b6b">안녕하세요</div>
+                    <div class="clipboard-btn" data-title="감사합니다" data-content="감사합니다. 좋은 하루 되세요!" data-color="#4ecdc4">감사합니다</div>
+                    <div class="clipboard-btn" data-title="확인했습니다" data-content="네, 확인했습니다. 검토 후 회신드리겠습니다." data-color="#45b7d1">확인했습니다</div>
+                    <div class="clipboard-btn" data-title="완료" data-content="작업이 완료되었습니다." data-color="#96ceb4">완료</div>
+                    <div class="clipboard-btn" data-title="진행중" data-content="현재 작업을 진행 중입니다." data-color="#ffeaa7">진행중</div>
+                    <div class="clipboard-btn" data-title="검토" data-content="검토가 필요한 사항입니다." data-color="#dda0dd">검토</div>
+                </div>
             </div>
         </main>
     </div>
@@ -54,9 +106,6 @@
                 <div class="modal-body">
                     <input type="hidden" id="edit-id">
                     <textarea id="edit-input" placeholder="메모를 입력하세요."></textarea>
-                    <select id="edit-category">
-                        <!-- 카테고리 옵션들이 동적으로 생성됩니다. -->
-                    </select>
                 </div>
                 <div class="modal-footer">
                     <button type="submit">저장</button>
@@ -115,6 +164,84 @@
             </div>
         </div>
     </div>
+
+    <!-- 클립보드 버튼 컨텍스트 메뉴 -->
+    <div id="clipboard-context-menu" class="context-menu">
+        <div class="context-item" data-action="edit">편집</div>
+        <div class="context-item" data-action="color">색상변경</div>
+        <div class="context-item" data-action="delete">삭제</div>
+        <div class="context-item" data-action="cancel">취소</div>
+    </div>
+
+    <!-- 색상 팔레트 팝업 -->
+    <div id="color-palette" class="color-palette">
+        <div class="color-item" data-color="#ff6b6b"></div>
+        <div class="color-item" data-color="#4ecdc4"></div>
+        <div class="color-item" data-color="#45b7d1"></div>
+        <div class="color-item" data-color="#96ceb4"></div>
+        <div class="color-item" data-color="#ffeaa7"></div>
+        <div class="color-item" data-color="#dda0dd"></div>
+        <div class="color-item" data-color="#fd79a8"></div>
+        <div class="color-item" data-color="#fdcb6e"></div>
+        <div class="color-item" data-color="#6c5ce7"></div>
+        <div class="color-item" data-color="#a29bfe"></div>
+        <div class="color-item" data-color="#fd79a8"></div>
+        <div class="color-item" data-color="#e17055"></div>
+    </div>
+
+    <!-- 새 클립보드 버튼 생성 모달 -->
+    <div id="clipboard-create-modal" class="modal">
+        <div class="modal-content custom-modal">
+            <div class="modal-header">
+                <h3>새 클립보드 버튼 생성</h3>
+                <span class="close-btn">&times;</span>
+            </div>
+            <form id="clipboard-create-form">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="clipboard-title">제목 (버튼에 표시될 텍스트):</label>
+                        <input type="text" id="clipboard-title" class="custom-input" placeholder="예: 안녕하세요" maxlength="6" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="clipboard-content">내용 (복사될 텍스트):</label>
+                        <textarea id="clipboard-content-input" class="custom-input" placeholder="예: 안녕하세요. 반갑습니다!" rows="3" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn-confirm">생성</button>
+                    <button type="button" class="btn-cancel close-btn">취소</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 클립보드 버튼 편집 모달 -->
+    <div id="clipboard-edit-modal" class="modal">
+        <div class="modal-content custom-modal">
+            <div class="modal-header">
+                <h3>클립보드 버튼 편집</h3>
+                <span class="close-btn">&times;</span>
+            </div>
+            <form id="clipboard-edit-form">
+                <div class="modal-body">
+                    <input type="hidden" id="edit-clipboard-id">
+                    <div class="form-group">
+                        <label for="edit-clipboard-title">제목:</label>
+                        <input type="text" id="edit-clipboard-title" class="custom-input" maxlength="6" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-clipboard-content">내용:</label>
+                        <textarea id="edit-clipboard-content" class="custom-input" rows="3" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn-confirm">저장</button>
+                    <button type="button" class="btn-cancel close-btn">취소</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script src="sidebar-v2.js"></script>
 </body>
 </html>
