@@ -35,9 +35,43 @@ body {
     flex-shrink: 0;
 }
 
+/* 헤더 상단 영역 */
+.header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+/* 백업 버튼들 */
+.backup-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+.backup-buttons button {
+    width: 32px;
+    height: 32px;
+    background: rgba(255, 255, 255, 0.9);
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.backup-buttons button:hover {
+    background: white;
+    transform: scale(1.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
 #quick-memo-section h2 {
     font-size: 24px;
-    margin-bottom: 15px;
+    margin-bottom: 0;
     font-weight: 700;
     color: white;
     letter-spacing: -0.5px;
@@ -149,7 +183,7 @@ body {
 /* 클립보드 영역 - 하단 절반 */
 #clipboard-area {
     flex: 1;
-    padding: 5px;
+    padding: 3px;
     background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
     border-radius: 0 0 20px 20px;
     overflow-y: auto;
@@ -163,32 +197,32 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 5px;
-    gap: 8px;
+    margin-bottom: 3px;
+    gap: 6px;
 }
 
 /* 클립보드 가이드 텍스트 */
 .clipboard-guide {
     color: rgba(255, 255, 255, 0.9);
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 600;
     text-align: center;
-    padding: 5px 8px;
+    padding: 3px 6px;
     background: rgba(255, 255, 255, 0.1);
-    border-radius: 5px;
+    border-radius: 4px;
     border: 1px solid rgba(255, 255, 255, 0.2);
     flex: 1;
 }
 
 /* 추가 버튼 */
 .add-btn {
-    width: 30px;
-    height: 30px;
+    width: 26px;
+    height: 26px;
     background: rgba(255, 255, 255, 0.9);
     border: 2px solid #333;
     border-radius: 50%;
     color: #333;
-    font-size: 16px;
+    font-size: 14px;
     font-weight: bold;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -207,8 +241,8 @@ body {
 
 #clipboard-content {
     background: rgba(255, 255, 255, 0.9);
-    border-radius: 10px;
-    padding: 15px;
+    border-radius: 8px;
+    padding: 8px;
     flex: 1;
     color: #333;
     font-size: 14px;
@@ -216,22 +250,23 @@ body {
     border: 2px solid #000000;
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 4px;
     align-content: flex-start;
     overflow-y: auto;
 }
 
 /* 클립보드 버튼 스타일 */
 .clipboard-btn {
-    width: 80px;
-    height: 35px;
-    border: 2px solid #333;
-    border-radius: 8px;
+    width: calc(25% - 3px);
+    min-width: 55px;
+    height: 32px;
+    border: 1.5px solid #333;
+    border-radius: 6px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 600;
     color: #333;
     transition: all 0.2s ease;
@@ -263,6 +298,67 @@ body {
 .clipboard-btn.drag-over {
     border-color: #007bff;
     background: rgba(0, 123, 255, 0.1);
+}
+
+/* 클립보드 버튼 툴팁 */
+.clipboard-tooltip {
+    position: fixed;
+    background: rgba(0, 0, 0, 0.9);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.4;
+    max-width: 250px;
+    word-wrap: break-word;
+    z-index: 10000;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+    pointer-events: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.clipboard-tooltip.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.clipboard-tooltip .tooltip-content {
+    margin: 0;
+}
+
+.clipboard-tooltip .tooltip-arrow {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background: rgba(0, 0, 0, 0.9);
+    transform: rotate(45deg);
+}
+
+.clipboard-tooltip.top .tooltip-arrow {
+    bottom: -4px;
+    left: 50%;
+    transform: translateX(-50%) rotate(45deg);
+}
+
+.clipboard-tooltip.bottom .tooltip-arrow {
+    top: -4px;
+    left: 50%;
+    transform: translateX(-50%) rotate(45deg);
+}
+
+.clipboard-tooltip.left .tooltip-arrow {
+    right: -4px;
+    top: 50%;
+    transform: translateY(-50%) rotate(45deg);
+}
+
+.clipboard-tooltip.right .tooltip-arrow {
+    left: -4px;
+    top: 50%;
+    transform: translateY(-50%) rotate(45deg);
 }
 
 /* 컨텍스트 메뉴 스타일 */

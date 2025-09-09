@@ -12,7 +12,13 @@
 <body>
     <div class="main-container">
         <header id="quick-memo-section">
-            <h2>메모장 <span id="current-datetime"></span></h2>
+            <div class="header-top">
+                <h2>메모장 <span id="current-datetime"></span></h2>
+                <div class="backup-buttons">
+                    <button type="button" id="backup-btn" title="데이터 백업">📥</button>
+                    <button type="button" id="restore-btn" title="데이터 복원">📤</button>
+                </div>
+            </div>
             <form id="memo-form">
                 <textarea id="memo-input" placeholder="메모를 입력하세요. 첫 줄은 제목이 됩니다."></textarea>
                 <div class="button-row">
@@ -241,6 +247,15 @@
             </form>
         </div>
     </div>
+
+    <!-- 클립보드 버튼 툴팁 -->
+    <div id="clipboard-tooltip" class="clipboard-tooltip">
+        <div class="tooltip-content"></div>
+        <div class="tooltip-arrow"></div>
+    </div>
+
+    <!-- 백업/복원용 숨겨진 파일 입력 -->
+    <input type="file" id="restore-file-input" accept=".json" style="display: none;">
 
     <script src="sidebar-v2.js"></script>
 </body>

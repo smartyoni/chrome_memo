@@ -5,6 +5,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const memoList = document.getElementById('memo-list');
     const datetimeElement = document.getElementById('current-datetime');
     const clearBtn = document.getElementById('clear-btn');
+    const backupBtn = document.getElementById('backup-btn');
+    const restoreBtn = document.getElementById('restore-btn');
+    const restoreFileInput = document.getElementById('restore-file-input');
 
     // 모달 관련 DOM 요소
     const viewModal = document.getElementById('view-modal');
@@ -97,6 +100,84 @@ document.addEventListener('DOMContentLoaded', () => {
             await chrome.storage.local.set({ memos: memos });
         } catch (error) {
             console.error('데이터 저장 실패:', error);
+        }
+    };
+
+    // --- 백업/복원 관리 ---
+    const backupData = async () => {
+        try {
+            // 모든 데이터 수집
+            const result = await chrome.storage.local.get(['memos', 'clipboardButtons']);
+            const backupData = {
+                memos: result.memos || [],
+                clipboardButtons: result.clipboardButtons || [],
+                exportDate: new Date().toISOString(),
+                appVersion: '1.0'
+            };
+
+            // 파일 다운로드
+            const dataStr = JSON.stringify(backupData, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            
+            const now = new Date();
+            const dateStr = now.toISOString().slice(0, 19).replace(/:/g, '-');
+            const filename = `메모장_백업_${dateStr}.json`;
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            
+            URL.revokeObjectURL(url);
+            
+            await showAlertModal('백업 완료', `데이터가 "${filename}" 파일로 백업되었습니다.`);
+        } catch (error) {
+            console.error('백업 실패:', error);
+            await showAlertModal('백업 실패', '데이터 백업 중 오류가 발생했습니다.');
+        }
+    };
+
+    const restoreData = async (file) => {
+        try {
+            const text = await file.text();
+            const backupData = JSON.parse(text);
+            
+            // 데이터 유효성 검사
+            if (!backupData.memos || !Array.isArray(backupData.memos)) {
+                throw new Error('유효하지 않은 백업 파일입니다.');
+            }
+            
+            const confirmed = await showConfirmModal(
+                '데이터 복원', 
+                `백업 파일의 데이터로 복원하시겠습니까?\n\n` +
+                `메모: ${backupData.memos.length}개\n` +
+                `클립보드 버튼: ${(backupData.clipboardButtons || []).length}개\n` +
+                `백업 날짜: ${new Date(backupData.exportDate).toLocaleString('ko-KR')}\n\n` +
+                `⚠️ 현재 데이터는 모두 대체됩니다.`
+            );
+            
+            if (confirmed) {
+                // 데이터 복원
+                await chrome.storage.local.clear();
+                await chrome.storage.local.set({
+                    memos: backupData.memos,
+                    clipboardButtons: backupData.clipboardButtons || []
+                });
+                
+                // 현재 앱 상태 업데이트
+                memos = backupData.memos;
+                clipboardButtons = backupData.clipboardButtons || [];
+                
+                // 화면 업데이트
+                render();
+                renderClipboardButtons();
+                
+                await showAlertModal('복원 완료', '백업 데이터가 성공적으로 복원되었습니다.');
+            }
+        } catch (error) {
+            console.error('복원 실패:', error);
+            await showAlertModal('복원 실패', '백업 파일을 읽는 중 오류가 발생했습니다.\n파일이 손상되었거나 올바른 형식이 아닙니다.');
         }
     };
 
@@ -317,6 +398,18 @@ document.addEventListener('DOMContentLoaded', () => {
         memoForm.addEventListener('submit', handleMemoSubmit);
         clearBtn.addEventListener('click', handleClearBtn);
         editForm.addEventListener('submit', handleEditFormSubmit);
+        
+        // 백업/복원 이벤트 리스너
+        backupBtn.addEventListener('click', backupData);
+        restoreBtn.addEventListener('click', () => restoreFileInput.click());
+        restoreFileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                restoreData(file);
+                // 파일 입력 리셋
+                e.target.value = '';
+            }
+        });
         closeModalBtns.forEach(btn => btn.addEventListener('click', closeModal));
         window.addEventListener('click', (e) => {
             if (e.target == viewModal || e.target == editModal) {
@@ -334,21 +427,82 @@ document.addEventListener('DOMContentLoaded', () => {
     const clipboardContent = document.getElementById('clipboard-content');
     const contextMenu = document.getElementById('clipboard-context-menu');
     const colorPalette = document.getElementById('color-palette');
+    const clipboardTooltip = document.getElementById('clipboard-tooltip');
     let currentBtn = null;
     let draggedBtn = null;
     let lastCopiedText = ''; // 마지막 복사된 텍스트 저장
+    let clipboardButtons = []; // 클립보드 버튼 데이터 배열
+    let tooltipTimeout = null;
 
-    // 클립보드 버튼 초기화
-    const initClipboardButtons = () => {
-        // 각 버튼에 색상 설정
-        document.querySelectorAll('.clipboard-btn').forEach(btn => {
-            const color = btn.dataset.color;
-            if (color) {
-                btn.style.setProperty('--btn-color', color);
-                btn.style.background = color; // 직접 배경색도 설정
+    // 클립보드 데이터 저장
+    const saveClipboardData = async () => {
+        try {
+            await chrome.storage.local.set({ clipboardButtons: clipboardButtons });
+        } catch (error) {
+            console.error('클립보드 데이터 저장 실패:', error);
+        }
+    };
+
+    // 클립보드 데이터 로드
+    const loadClipboardData = async () => {
+        try {
+            const result = await chrome.storage.local.get(['clipboardButtons']);
+            if (result.clipboardButtons && Array.isArray(result.clipboardButtons)) {
+                clipboardButtons = result.clipboardButtons;
+            } else {
+                // 기본 클립보드 버튼 데이터
+                clipboardButtons = [
+                    { id: '1', title: '안녕하세요', content: '안녕하세요. 반갑습니다!', color: '#ff6b6b' },
+                    { id: '2', title: '감사합니다', content: '감사합니다. 좋은 하루 되세요!', color: '#4ecdc4' },
+                    { id: '3', title: '확인했습니다', content: '네, 확인했습니다. 검토 후 회신드리겠습니다.', color: '#45b7d1' },
+                    { id: '4', title: '완료', content: '작업이 완료되었습니다.', color: '#96ceb4' },
+                    { id: '5', title: '진행중', content: '현재 작업을 진행 중입니다.', color: '#ffeaa7' },
+                    { id: '6', title: '검토', content: '검토가 필요한 사항입니다.', color: '#dda0dd' }
+                ];
+                await saveClipboardData();
             }
+        } catch (error) {
+            console.error('클립보드 데이터 로드 실패:', error);
+            clipboardButtons = [];
+        }
+    };
+
+    // 클립보드 버튼 렌더링 (저장된 데이터 기반)
+    const renderClipboardButtons = () => {
+        clipboardContent.innerHTML = '';
+        clipboardButtons.forEach(btnData => {
+            const btn = document.createElement('div');
+            btn.className = 'clipboard-btn';
+            btn.dataset.title = btnData.title;
+            btn.dataset.content = btnData.content;
+            btn.dataset.color = btnData.color;
+            btn.dataset.id = btnData.id;
+            btn.textContent = btnData.title;
+            btn.style.setProperty('--btn-color', btnData.color);
+            btn.style.background = btnData.color;
+            
             setupButtonEvents(btn);
+            clipboardContent.appendChild(btn);
         });
+    };
+
+    // 클립보드 버튼 초기화 (기존 HTML 버튼들을 데이터로 변환)
+    const initClipboardButtons = () => {
+        // 기존 HTML에서 버튼 데이터 추출 (초기 로드 시에만)
+        if (clipboardButtons.length === 0) {
+            document.querySelectorAll('.clipboard-btn').forEach((btn, index) => {
+                const btnData = {
+                    id: (index + 1).toString(),
+                    title: btn.dataset.title || btn.textContent,
+                    content: btn.dataset.content || btn.dataset.text || btn.textContent,
+                    color: btn.dataset.color || '#ff6b6b'
+                };
+                clipboardButtons.push(btnData);
+            });
+        }
+        
+        // 저장된 데이터로 버튼 렌더링
+        renderClipboardButtons();
     };
 
     // 버튼 이벤트 설정
@@ -368,13 +522,31 @@ document.addEventListener('DOMContentLoaded', () => {
         // 우클릭 컨텍스트 메뉴
         btn.addEventListener('contextmenu', (e) => {
             e.preventDefault();
+            hideTooltip(); // 컨텍스트 메뉴 열 때 툴팁 숨김
             currentBtn = btn;
             showContextMenu(e.clientX, e.clientY);
         });
 
+        // 호버 이벤트 (툴팁)
+        btn.addEventListener('mouseenter', (e) => {
+            const content = btn.dataset.content || btn.dataset.text;
+            if (content && content.trim()) {
+                tooltipTimeout = setTimeout(() => {
+                    showTooltip(btn, content);
+                }, 500); // 0.5초 지연 후 표시
+            }
+        });
+
+        btn.addEventListener('mouseleave', () => {
+            hideTooltip();
+        });
+
         // 드래그 앤 드롭
         btn.draggable = true;
-        btn.addEventListener('dragstart', handleDragStart);
+        btn.addEventListener('dragstart', (e) => {
+            hideTooltip(); // 드래그 시작할 때 툴팁 숨김
+            handleDragStart(e);
+        });
         btn.addEventListener('dragover', handleDragOver);
         btn.addEventListener('drop', handleDrop);
         btn.addEventListener('dragend', handleDragEnd);
@@ -392,29 +564,156 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 200);
     };
 
-    // 컨텍스트 메뉴 표시
+    // 컨텍스트 메뉴 표시 (화면 경계 고려)
     const showContextMenu = (x, y) => {
-        contextMenu.style.left = x + 'px';
-        contextMenu.style.top = y + 'px';
+        // 먼저 메뉴를 표시해서 크기를 측정할 수 있도록 함
         contextMenu.style.display = 'block';
+        contextMenu.style.left = '0px';
+        contextMenu.style.top = '0px';
+        
+        // 메뉴와 화면 크기 측정
+        const menuRect = contextMenu.getBoundingClientRect();
+        const windowWidth = window.innerWidth;
+        const windowHeight = window.innerHeight;
+        
+        let adjustedX = x;
+        let adjustedY = y;
+        
+        // 우측 경계 확인 및 조정
+        if (x + menuRect.width > windowWidth) {
+            adjustedX = x - menuRect.width;
+        }
+        
+        // 하단 경계 확인 및 조정
+        if (y + menuRect.height > windowHeight) {
+            adjustedY = y - menuRect.height;
+        }
+        
+        // 좌측 경계 확인 (우측 조정 후에도 화면을 벗어나는 경우)
+        if (adjustedX < 0) {
+            adjustedX = 10; // 최소 여백
+        }
+        
+        // 상단 경계 확인 (하단 조정 후에도 화면을 벗어나는 경우)
+        if (adjustedY < 0) {
+            adjustedY = 10; // 최소 여백
+        }
+        
+        contextMenu.style.left = adjustedX + 'px';
+        contextMenu.style.top = adjustedY + 'px';
     };
 
     // 컨텍스트 메뉴 숨기기
     const hideContextMenu = () => {
         contextMenu.style.display = 'none';
-        currentBtn = null;
+        // currentBtn은 여기서 null로 설정하지 않음 (동작 완료 후에만 null 설정)
     };
 
-    // 색상 팔레트 표시
+    // 색상 팔레트 표시 (화면 경계 고려)
     const showColorPalette = (x, y) => {
-        colorPalette.style.left = x + 'px';
-        colorPalette.style.top = y + 'px';
+        // 먼저 팔레트를 표시해서 크기를 측정할 수 있도록 함
         colorPalette.classList.add('show');
+        colorPalette.style.left = '0px';
+        colorPalette.style.top = '0px';
+        
+        // 팔레트와 화면 크기 측정
+        const paletteRect = colorPalette.getBoundingClientRect();
+        const windowWidth = window.innerWidth;
+        const windowHeight = window.innerHeight;
+        
+        let adjustedX = x;
+        let adjustedY = y;
+        
+        // 우측 경계 확인 및 조정
+        if (x + paletteRect.width > windowWidth) {
+            adjustedX = x - paletteRect.width;
+        }
+        
+        // 하단 경계 확인 및 조정
+        if (y + paletteRect.height > windowHeight) {
+            adjustedY = y - paletteRect.height;
+        }
+        
+        // 좌측 경계 확인
+        if (adjustedX < 0) {
+            adjustedX = 10;
+        }
+        
+        // 상단 경계 확인
+        if (adjustedY < 0) {
+            adjustedY = 10;
+        }
+        
+        colorPalette.style.left = adjustedX + 'px';
+        colorPalette.style.top = adjustedY + 'px';
     };
 
     // 색상 팔레트 숨기기
     const hideColorPalette = () => {
         colorPalette.classList.remove('show');
+    };
+
+    // 툴팁 표시 (화면 경계 고려)
+    const showTooltip = (btn, content) => {
+        if (!content) return;
+        
+        clipboardTooltip.querySelector('.tooltip-content').textContent = content;
+        clipboardTooltip.classList.add('show');
+        
+        // 버튼 위치 측정
+        const btnRect = btn.getBoundingClientRect();
+        const tooltipRect = clipboardTooltip.getBoundingClientRect();
+        const windowWidth = window.innerWidth;
+        const windowHeight = window.innerHeight;
+        
+        let x, y, position = 'top';
+        
+        // 기본적으로 버튼 위쪽에 표시
+        x = btnRect.left + (btnRect.width / 2) - (tooltipRect.width / 2);
+        y = btnRect.top - tooltipRect.height - 8;
+        
+        // 상단 공간이 부족하면 아래쪽에 표시
+        if (y < 10) {
+            y = btnRect.bottom + 8;
+            position = 'bottom';
+        }
+        
+        // 좌측 경계 확인
+        if (x < 10) {
+            x = btnRect.right + 8;
+            y = btnRect.top + (btnRect.height / 2) - (tooltipRect.height / 2);
+            position = 'right';
+        }
+        
+        // 우측 경계 확인
+        if (x + tooltipRect.width > windowWidth - 10) {
+            x = btnRect.left - tooltipRect.width - 8;
+            y = btnRect.top + (btnRect.height / 2) - (tooltipRect.height / 2);
+            position = 'left';
+        }
+        
+        // 하단 경계 확인 (측면 배치 후)
+        if (position === 'left' || position === 'right') {
+            if (y < 10) {
+                y = 10;
+            } else if (y + tooltipRect.height > windowHeight - 10) {
+                y = windowHeight - tooltipRect.height - 10;
+            }
+        }
+        
+        // 클래스 초기화 후 위치별 클래스 추가
+        clipboardTooltip.className = 'clipboard-tooltip show ' + position;
+        clipboardTooltip.style.left = x + 'px';
+        clipboardTooltip.style.top = y + 'px';
+    };
+
+    // 툴팁 숨기기
+    const hideTooltip = () => {
+        clipboardTooltip.classList.remove('show');
+        if (tooltipTimeout) {
+            clearTimeout(tooltipTimeout);
+            tooltipTimeout = null;
+        }
     };
 
     // 드래그 앤 드롭 이벤트
@@ -430,17 +729,23 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    const handleDrop = (e) => {
+    const handleDrop = async (e) => {
         e.preventDefault();
         if (e.target.classList.contains('clipboard-btn') && e.target !== draggedBtn) {
-            // 버튼 순서 바꾸기
-            const draggedIndex = Array.from(clipboardContent.children).indexOf(draggedBtn);
-            const targetIndex = Array.from(clipboardContent.children).indexOf(e.target);
+            // 데이터 배열에서 순서 변경
+            const draggedId = draggedBtn.dataset.id;
+            const targetId = e.target.dataset.id;
             
-            if (draggedIndex < targetIndex) {
-                clipboardContent.insertBefore(draggedBtn, e.target.nextSibling);
-            } else {
-                clipboardContent.insertBefore(draggedBtn, e.target);
+            const draggedIndex = clipboardButtons.findIndex(btn => btn.id === draggedId);
+            const targetIndex = clipboardButtons.findIndex(btn => btn.id === targetId);
+            
+            if (draggedIndex !== -1 && targetIndex !== -1) {
+                // 배열에서 요소 이동
+                const [draggedItem] = clipboardButtons.splice(draggedIndex, 1);
+                clipboardButtons.splice(targetIndex, 0, draggedItem);
+                
+                await saveClipboardData();
+                renderClipboardButtons();
             }
         }
         
@@ -463,13 +768,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     editButtonText();
                     break;
                 case 'color':
-                    const rect = e.target.getBoundingClientRect();
-                    showColorPalette(rect.right + 10, rect.top);
-                    break;
+                    if (currentBtn) {
+                        const btnRect = currentBtn.getBoundingClientRect();
+                        showColorPalette(btnRect.right + 10, btnRect.top);
+                    }
+                    return; // 색상 선택 중에는 currentBtn 유지
                 case 'delete':
                     deleteButton();
                     break;
                 case 'cancel':
+                    currentBtn = null; // 취소 시에만 즉시 null 설정
                     break;
             }
             hideContextMenu();
@@ -478,17 +786,25 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.target.classList.contains('color-item')) {
             const color = e.target.dataset.color;
             if (currentBtn) {
-                currentBtn.dataset.color = color;
-                currentBtn.style.setProperty('--btn-color', color);
-                currentBtn.style.background = color; // 직접 배경색도 설정
+                const btnId = currentBtn.dataset.id;
+                const btnData = clipboardButtons.find(btn => btn.id === btnId);
+                
+                if (btnData) {
+                    btnData.color = color;
+                    saveClipboardData();
+                    renderClipboardButtons();
+                }
             }
             hideColorPalette();
+            currentBtn = null; // 색상 변경 완료 후 null 설정
         }
         
         // 클릭이 메뉴 외부일 때 메뉴 숨기기
         if (!contextMenu.contains(e.target) && !colorPalette.contains(e.target)) {
             hideContextMenu();
             hideColorPalette();
+            hideTooltip(); // 외부 클릭 시 툴팁도 숨김
+            currentBtn = null; // 메뉴 외부 클릭 시 null 설정
         }
     });
 
@@ -499,8 +815,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!currentBtn) return;
         
         const confirmed = await showConfirmModal('삭제 확인', '이 버튼을 삭제하시겠습니까?');
-        if (confirmed) {
-            currentBtn.remove();
+        if (confirmed && currentBtn) {
+            const btnId = currentBtn.dataset.id;
+            clipboardButtons = clipboardButtons.filter(btn => btn.id !== btnId);
+            await saveClipboardData();
+            renderClipboardButtons();
+            currentBtn = null; // 삭제 후 null로 설정
         }
     };
 
@@ -623,19 +943,19 @@ document.addEventListener('DOMContentLoaded', () => {
         clipboardEditForm: !!clipboardEditForm
     });
 
-    // 새 클립보드 버튼 생성
-    const createClipboardButton = (title, content, color = '#4ecdc4') => {
-        const btn = document.createElement('div');
-        btn.className = 'clipboard-btn';
-        btn.dataset.title = title;
-        btn.dataset.content = content;
-        btn.dataset.color = color;
-        btn.textContent = title;
-        btn.style.setProperty('--btn-color', color);
-        btn.style.background = color; // 직접 배경색도 설정
+    // 새 클립보드 버튼 데이터 생성 및 저장
+    const createClipboardButtonData = async (title, content, color = '#4ecdc4') => {
+        const newBtnData = {
+            id: Date.now().toString(),
+            title: title,
+            content: content,
+            color: color
+        };
         
-        setupButtonEvents(btn);
-        return btn;
+        clipboardButtons.push(newBtnData);
+        await saveClipboardData();
+        renderClipboardButtons();
+        return newBtnData;
     };
 
     // 클립보드 버튼 추가 이벤트
@@ -655,14 +975,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 생성 폼 제출
     if (createForm) {
-        createForm.addEventListener('submit', (e) => {
+        createForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const title = document.getElementById('clipboard-title').value.trim();
             const content = document.getElementById('clipboard-content-input').value.trim();
             
             if (title && content) {
-                const newBtn = createClipboardButton(title, content);
-                clipboardContent.appendChild(newBtn);
+                await createClipboardButtonData(title, content);
                 
                 createForm.reset();
                 createModal.style.display = 'none';
@@ -672,18 +991,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 편집 폼 제출
     if (clipboardEditForm) {
-        clipboardEditForm.addEventListener('submit', (e) => {
+        clipboardEditForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const title = document.getElementById('edit-clipboard-title').value.trim();
             const content = document.getElementById('edit-clipboard-content').value.trim();
+            const btnId = document.getElementById('edit-clipboard-id').value; // 숨은 필드에서 ID 가져오기
             
-            if (title && content && currentBtn) {
-                currentBtn.dataset.title = title;
-                currentBtn.dataset.content = content;
-                currentBtn.textContent = title;
+            console.log('편집 폼 제출:', { title, content, btnId });
+            
+            if (title && content && btnId) {
+                const btnData = clipboardButtons.find(btn => btn.id === btnId);
+                
+                console.log('편집 대상:', { btnId, btnData });
+                
+                if (btnData) {
+                    btnData.title = title;
+                    btnData.content = content;
+                    await saveClipboardData();
+                    renderClipboardButtons();
+                    console.log('편집 완료 및 저장됨');
+                } else {
+                    console.error('버튼 데이터를 찾을 수 없습니다:', btnId);
+                }
                 
                 clipboardEditForm.reset();
                 clipboardEditModal.style.display = 'none';
+                currentBtn = null; // 편집 완료 후 null 설정
+            } else {
+                console.error('편집 폼 검증 실패:', { title, content, btnId });
             }
         });
     }
@@ -692,11 +1027,26 @@ document.addEventListener('DOMContentLoaded', () => {
     const editButtonText = () => {
         if (!currentBtn) return;
         
-        document.getElementById('edit-clipboard-title').value = currentBtn.dataset.title || currentBtn.textContent;
-        document.getElementById('edit-clipboard-content').value = currentBtn.dataset.content || currentBtn.dataset.text || '';
+        const btnId = currentBtn.dataset.id;
+        const btnData = clipboardButtons.find(btn => btn.id === btnId);
+        
+        console.log('편집 모달 열기:', { btnId, btnData, currentBtn: currentBtn });
+        
+        if (btnData) {
+            document.getElementById('edit-clipboard-id').value = btnData.id; // ID를 숨은 필드에 저장
+            document.getElementById('edit-clipboard-title').value = btnData.title;
+            document.getElementById('edit-clipboard-content').value = btnData.content;
+        } else {
+            // 폴백: HTML 데이터 사용
+            document.getElementById('edit-clipboard-id').value = btnId || '';
+            document.getElementById('edit-clipboard-title').value = currentBtn.dataset.title || currentBtn.textContent;
+            document.getElementById('edit-clipboard-content').value = currentBtn.dataset.content || currentBtn.dataset.text || '';
+        }
         
         clipboardEditModal.style.display = 'flex';
-        document.getElementById('edit-clipboard-title').focus();
+        setTimeout(() => {
+            document.getElementById('edit-clipboard-title').focus();
+        }, 100);
     };
 
     // 모든 모달 닫기 이벤트
@@ -706,6 +1056,7 @@ document.addEventListener('DOMContentLoaded', () => {
             clipboardEditModal.style.display = 'none';
             if (createForm) createForm.reset();
             if (clipboardEditForm) clipboardEditForm.reset();
+            currentBtn = null; // 모달 닫기 시 null 설정
         }
         
         if (e.target === createModal || e.target === clipboardEditModal) {
@@ -713,10 +1064,16 @@ document.addEventListener('DOMContentLoaded', () => {
             clipboardEditModal.style.display = 'none';
             if (createForm) createForm.reset();
             if (clipboardEditForm) clipboardEditForm.reset();
+            currentBtn = null; // 모달 닫기 시 null 설정
         }
     });
 
-    // 클립보드 버튼 시스템 초기화
-    initClipboardButtons();
-    addInputHoverEffects();
+    // 클립보드 시스템 초기화
+    const initClipboardSystem = async () => {
+        await loadClipboardData();
+        renderClipboardButtons();
+        addInputHoverEffects();
+    };
+    
+    initClipboardSystem();
 });
